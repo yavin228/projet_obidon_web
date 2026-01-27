@@ -1,0 +1,342 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Obidon - Mon Compte{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/account.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="account-wrapper">
+    <div class="account-container">
+        <!-- Sidebar -->
+        <div class="account-sidebar">
+            <div class="user-profile-card">
+                <div class="user-avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <h2 class="user-name">{{ user.first_name|default:user.username }} {{ user.last_name }}</h2>
+                <p class="user-email">{{ user.email }}</p>
+                <p class="user-joined">Membre depuis {{ user.date_joined|date:"d/m/Y" }}</p>
+                <a href="#" class="btn-edit-profile" onclick="document.querySelector('[data-section=settings]').click()">
+                    <i class="fas fa-edit"></i> Modifier le profil
+                </a>
+            </div>
+
+            <nav class="account-menu">
+                <a href="#" class="menu-item active" data-section="dashboard">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Tableau de bord</span>
+                </a>
+                <a href="#" class="menu-item" data-section="orders">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span>Mes Commandes</span>
+                </a>
+                <a href="#" class="menu-item" data-section="addresses">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>Mes Adresses</span>
+                </a>
+                <a href="#" class="menu-item" data-section="wishlist">
+                    <i class="fas fa-heart"></i>
+                    <span>Mes Favoris</span>
+                </a>
+                <a href="#" class="menu-item" data-section="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Paramètres</span>
+                </a>
+                <hr class="sidebar-divider">
+                <a href="{% url 'account_logout' %}" class="menu-item logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Déconnexion</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="account-content">
+            <!-- Dashboard Section -->
+            <section class="content-section active" id="dashboard">
+                <div class="section-header">
+                    <h2>Tableau de Bord</h2>
+                    <p>Bienvenue sur votre espace personnel</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h4>Commandes</h4>
+                            <p class="stat-value">{{ user.orders.all|length|default:"0" }}</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h4>Favoris</h4>
+                            <p class="stat-value">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h4>Adresses</h4>
+                            <p class="stat-value">2</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h4>Dépenses</h4>
+                            <p class="stat-value">${{ total_spent|default:"0"|floatformat:2 }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-boxes">
+                    <div class="info-box" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                        <i class="fas fa-truck"></i>
+                        <h4>Livraison Gratuite</h4>
+                        <p>À partir de 50€ d'achat</p>
+                    </div>
+                    <div class="info-box" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                        <i class="fas fa-undo"></i>
+                        <h4>Retours Faciles</h4>
+                        <p>30 jours pour retourner</p>
+                    </div>
+                    <div class="info-box" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+                        <i class="fas fa-lock"></i>
+                        <h4>Sécurisé</h4>
+                        <p>Paiements 100% sécurisés</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Orders Section -->
+            <section class="content-section" id="orders">
+                <div class="section-header">
+                    <h2>Mes Commandes</h2>
+                    <p>Historique et suivi de vos commandes</p>
+                </div>
+
+                {% if user.orders.all %}
+                    <div class="orders-list">
+                        {% for order in user.orders.all %}
+                        <div class="order-card">
+                            <div class="order-header">
+                                <div class="order-info">
+                                    <h4>{{ order.order_number }}</h4>
+                                    <p class="order-date">Passée le {{ order.created_at|date:"d/m/Y H:i" }}</p>
+                                </div>
+                                <div class="order-status">
+                                    <span class="badge badge-{{ order.status }}">
+                                        {% if order.status == 'pending' %}En attente
+                                        {% elif order.status == 'confirmed' %}Confirmée
+                                        {% elif order.status == 'shipped' %}Expédiée
+                                        {% elif order.status == 'delivered' %}Livrée
+                                        {% elif order.status == 'cancelled' %}Annulée
+                                        {% elif order.status == 'refunded' %}Remboursée
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="order-body">
+                                <div class="order-items">
+                                    <h5>Articles ({{ order.items.all|length }})</h5>
+                                    {% for item in order.items.all %}
+                                    <div class="order-item">
+                                        <p>{{ item.product.name }} × {{ item.quantity }}</p>
+                                        <p class="order-item-price">${{ item.total|floatformat:2 }}</p>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="order-totals">
+                                    <div class="total-row">
+                                        <span>Sous-total:</span>
+                                        <span>${{ order.total_amount|floatformat:2 }}</span>
+                                    </div>
+                                    {% if order.tax_amount %}
+                                    <div class="total-row">
+                                        <span>Taxes:</span>
+                                        <span>${{ order.tax_amount|floatformat:2 }}</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if order.shipping_cost %}
+                                    <div class="total-row">
+                                        <span>Frais de port:</span>
+                                        <span>${{ order.shipping_cost|floatformat:2 }}</span>
+                                    </div>
+                                    {% endif %}
+                                    <div class="total-row total">
+                                        <span>Total:</span>
+                                        <span>${{ order.total_amount|floatformat:2 }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="order-footer">
+                                <p><strong>Livraison à:</strong> {{ order.shipping_address|truncatewords:10 }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-shopping-bag"></i>
+                        <h4>Aucune commande</h4>
+                        <p>Vous n'avez pas encore passé de commande</p>
+                        <a href="/" class="btn-primary">Commencer à acheter</a>
+                    </div>
+                {% endif %}
+            </section>
+
+            <!-- Addresses Section -->
+            <section class="content-section" id="addresses">
+                <div class="section-header">
+                    <h2>Mes Adresses</h2>
+                    <p>Gérez vos adresses de livraison</p>
+                </div>
+
+                <div class="addresses-grid">
+                    <div class="address-card add-address" onclick="alert('Formulaire d\'ajout d\'adresse')">
+                        <i class="fas fa-plus"></i>
+                        <p>Ajouter une adresse</p>
+                    </div>
+
+                    <div class="address-card">
+                        <div class="address-badge">Domicile</div>
+                        <h5>123 Rue de Paris</h5>
+                        <p>75000 Paris, France</p>
+                        <p class="address-phone">Tél: +33 1 23 45 67 89</p>
+                        <div class="address-actions">
+                            <a href="#" class="btn-link">Modifier</a>
+                            <a href="#" class="btn-link danger">Supprimer</a>
+                        </div>
+                    </div>
+
+                    <div class="address-card">
+                        <div class="address-badge" style="background: #17a2b8;">Bureau</div>
+                        <h5>456 Avenue Principale</h5>
+                        <p>75001 Paris, France</p>
+                        <p class="address-phone">Tél: +33 1 98 76 54 32</p>
+                        <div class="address-actions">
+                            <a href="#" class="btn-link">Modifier</a>
+                            <a href="#" class="btn-link danger">Supprimer</a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Wishlist Section -->
+            <section class="content-section" id="wishlist">
+                <div class="section-header">
+                    <h2>Mes Favoris</h2>
+                    <p>Produits que vous avez aimés</p>
+                </div>
+
+                <div class="empty-state">
+                    <i class="fas fa-heart"></i>
+                    <h4>Aucun produit en favoris</h4>
+                    <p>Vous n'avez pas encore ajouté de produit à vos favoris</p>
+                    <a href="/" class="btn-primary">Découvrir les produits</a>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section class="content-section" id="settings">
+                <div class="section-header">
+                    <h2>Paramètres</h2>
+                    <p>Gérez vos informations personnelles et vos préférences</p>
+                </div>
+
+                <!-- Account Information -->
+                <div class="settings-group">
+                    <h4>Informations Personnelles</h4>
+                    <form method="post" action="#" class="form-group">
+                        {% csrf_token %}
+                        <div class="form-row">
+                            <div class="form-field">
+                                <label for="first_name">Prénom</label>
+                                <input type="text" id="first_name" value="{{ user.first_name }}" placeholder="Votre prénom">
+                            </div>
+                            <div class="form-field">
+                                <label for="last_name">Nom</label>
+                                <input type="text" id="last_name" value="{{ user.last_name }}" placeholder="Votre nom">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-field full-width">
+                                <label for="email">Email</label>
+                                <input type="email" id="email" value="{{ user.email }}" placeholder="Votre email" readonly>
+                                <small>Adresse email vérifiée</small>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-primary">Enregistrer les modifications</button>
+                    </form>
+                </div>
+
+                <!-- Password -->
+                <div class="settings-group">
+                    <h4>Sécurité</h4>
+                    <div class="security-option">
+                        <div class="security-info">
+                            <h5>Mot de passe</h5>
+                            <p>Changez votre mot de passe régulièrement pour sécuriser votre compte</p>
+                        </div>
+                        <a href="{% url 'account_change_password' %}" class="btn-outline">Changer le mot de passe</a>
+                    </div>
+                </div>
+
+                <!-- Notifications -->
+                <div class="settings-group">
+                    <h4>Notifications</h4>
+                    <div class="notification-option">
+                        <div class="checkbox-custom">
+                            <input type="checkbox" id="email_orders" checked>
+                            <label for="email_orders">Recevoir des emails sur mes commandes</label>
+                        </div>
+                    </div>
+                    <div class="notification-option">
+                        <div class="checkbox-custom">
+                            <input type="checkbox" id="email_newsletter" checked>
+                            <label for="email_newsletter">S'abonner à la newsletter</label>
+                        </div>
+                    </div>
+                    <div class="notification-option">
+                        <div class="checkbox-custom">
+                            <input type="checkbox" id="email_promotions">
+                            <label for="email_promotions">Recevoir les promotions spéciales</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Account Deletion -->
+                <div class="settings-group danger-zone">
+                    <h4>Zone Dangereuse</h4>
+                    <div class="danger-option">
+                        <div class="danger-info">
+                            <h5>Supprimer le compte</h5>
+                            <p>Cette action est irréversible. Toutes vos données seront supprimées.</p>
+                        </div>
+                        <button class="btn-danger" onclick="if(confirm('Êtes-vous sûr? Cette action est irréversible!')) alert('Suppression en cours...')">
+                            Supprimer le compte
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/account.js' %}"></script>
+{% endblock %}

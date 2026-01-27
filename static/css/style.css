@@ -1,0 +1,81 @@
+/* Main styles */
+
+:root {
+    --primary-color: #D32F2F;
+    --primary-dark: #B71C1C;
+    --accent-color: #FFC107;
+    --text-dark: #333333;
+    --text-light: #666666;
+    --border-color: #EEEEEE;
+    --success-color: #4CAF50;
+    --error-color: #f44336;
+    --white: #FFFFFF;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', 'Roboto', sans-serif;
+    background-color: #FAFAFA;
+    color: var(--text-dark);
+}
+
+main {
+    min-height: calc(100vh - 200px);
+}
+
+/* Cart button improvements */
+.btn-cart,
+.add-to-cart {
+    background-color: var(--accent-color);
+    color: var(--text-dark);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+}
+
+.btn-cart:hover,
+.add-to-cart:hover {
+    background-color: #FFB300;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+}
+
+.btn-cart:disabled,
+.add-to-cart:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-cart:active,
+.add-to-cart:active {
+    transform: translateY(0);
+}
+
+/* Notification styles */
+.notification {
+    font-weight: 500;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.notification-success {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.notification-error {
+    background-color: var(--error-color);
+    color: white;
+}

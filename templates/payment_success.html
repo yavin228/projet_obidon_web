@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Paiement réussi - Obidon{% endblock %}
+
+{% block content %}
+<div class="success-page">
+    <div class="success-container">
+        <div class="success-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        
+        <h1>Paiement réussi!</h1>
+        
+        <p class="success-message">
+            Merci pour votre commande. Nous avons reçu votre paiement avec succès.
+        </p>
+        
+        <div class="order-confirmation">
+            <h2>Confirmation de commande</h2>
+            
+            <div class="confirmation-detail">
+                <label>Numéro de commande</label>
+                <p class="confirmation-value">#CMD-2026-001</p>
+            </div>
+            
+            <div class="confirmation-detail">
+                <label>Montant payé</label>
+                <p class="confirmation-value">14,99€</p>
+            </div>
+            
+            <div class="confirmation-detail">
+                <label>Méthode de paiement</label>
+                <p class="confirmation-value">Carte bancaire</p>
+            </div>
+            
+            <div class="confirmation-detail">
+                <label>Statut</label>
+                <p class="confirmation-value" style="color: #4CAF50;">
+                    <i class="fas fa-check-circle"></i> Confirmée
+                </p>
+            </div>
+        </div>
+        
+        <div class="next-steps">
+            <h3>Prochaines étapes</h3>
+            <ol>
+                <li>Vous recevrez un email de confirmation avec les détails de votre commande</li>
+                <li>Votre colis sera préparé dans les 24 heures</li>
+                <li>Vous recevrez un numéro de suivi une fois l'envoi lancé</li>
+                <li>Livraison prévue entre 5-7 jours ouvrés</li>
+            </ol>
+        </div>
+        
+        <div class="action-buttons">
+            <a href="{% url 'products' %}" class="btn-continue-shopping">
+                <i class="fas fa-shopping-bag"></i> Continuer vos achats
+            </a>
+            <a href="{% url 'account' %}" class="btn-account">
+                <i class="fas fa-user"></i> Voir mon compte
+            </a>
+        </div>
+        
+        <div class="support-info">
+            <p>Des questions? <a href="#">Contactez notre support client</a></p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .success-page {
+        background: linear-gradient(135deg, #E8F5E9 0%, #F1F8E9 100%);
+        min-height: calc(100vh - 200px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+    }
+    
+    .success-container {
+        background: white;
+        border-radius: 8px;
+        padding: 60px 40px;
+        max-width: 600px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+    
+    .success-icon {
+        font-size: 80px;
+        color: #4CAF50;
+        margin-bottom: 20px;
+        animation: scaleIn 0.6s ease;
+    }
+    
+    @keyframes scaleIn {
+        from {
+            transform: scale(0);
+            opacity: 0;
+        }
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+    
+    .success-container h1 {
+        font-size: 32px;
+        color: #333;
+        margin-bottom: 15px;
+    }
+    
+    .success-message {
+        font-size: 16px;
+        color: #666;
+        margin-bottom: 40px;
+        line-height: 1.6;
+    }
+    
+    .order-confirmation {
+        background-color: #F9F9F9;
+        border-left: 4px solid #4CAF50;
+        padding: 25px;
+        border-radius: 4px;
+        margin-bottom: 40px;
+        text-align: left;
+    }
+    
+    .order-confirmation h2 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 20px;
+    }
+    
+    .confirmation-detail {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #EEE;
+    }
+    
+    .confirmation-detail:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+    
+    .confirmation-detail label {
+        font-weight: 600;
+        color: #666;
+        font-size: 14px;
+    }
+    
+    .confirmation-value {
+        font-weight: 700;
+        color: #333;
+        margin: 0;
+        font-size: 14px;
+    }
+    
+    .next-steps {
+        background-color: #FFF9C4;
+        padding: 20px;
+        border-radius: 4px;
+        margin-bottom: 40px;
+        text-align: left;
+    }
+    
+    .next-steps h3 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 15px;
+    }
+    
+    .next-steps ol {
+        margin: 0;
+        padding-left: 20px;
+    }
+    
+    .next-steps li {
+        margin-bottom: 8px;
+        font-size: 14px;
+        color: #666;
+        line-height: 1.6;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+    
+    .btn-continue-shopping,
+    .btn-account {
+        flex: 1;
+        padding: 12px 20px;
+        border-radius: 4px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 14px;
+    }
+    
+    .btn-continue-shopping {
+        background-color: #D32F2F;
+        color: white;
+    }
+    
+    .btn-continue-shopping:hover {
+        background-color: #B71C1C;
+        transform: translateY(-2px);
+    }
+    
+    .btn-account {
+        background-color: #F0F0F0;
+        color: #333;
+    }
+    
+    .btn-account:hover {
+        background-color: #E0E0E0;
+        transform: translateY(-2px);
+    }
+    
+    .support-info {
+        font-size: 14px;
+        color: #999;
+    }
+    
+    .support-info a {
+        color: #D32F2F;
+        text-decoration: none;
+    }
+    
+    .support-info a:hover {
+        text-decoration: underline;
+    }
+    
+    @media (max-width: 600px) {
+        .success-container {
+            padding: 40px 20px;
+        }
+        
+        .success-icon {
+            font-size: 60px;
+        }
+        
+        .success-container h1 {
+            font-size: 24px;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}

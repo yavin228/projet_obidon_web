@@ -1,0 +1,275 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard Admin - Obidon{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <!-- Sidebar Navigation -->
+    <aside class="admin-sidebar">
+        <div class="sidebar-header">
+            <h3>Admin Panel</h3>
+            <p>Bienvenue, {{ user.first_name|default:user.username }}</p>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="{% url 'dashboard' %}" class="nav-item active">
+                <i class="fas fa-chart-line"></i> Dashboard
+            </a>
+            <a href="{% url 'dashboard_analytics' %}" class="nav-item">
+                <i class="fas fa-chart-bar"></i> Analytics
+            </a>
+            <a href="/admin/core/product/" class="nav-item">
+                <i class="fas fa-boxes"></i> Produits
+            </a>
+            <a href="/admin/core/category/" class="nav-item">
+                <i class="fas fa-tag"></i> Catégories
+            </a>
+            <a href="/admin/core/order/" class="nav-item">
+                <i class="fas fa-shopping-cart"></i> Commandes
+            </a>
+            <a href="/admin/core/review/" class="nav-item">
+                <i class="fas fa-star"></i> Avis
+            </a>
+            <a href="/admin/auth/user/" class="nav-item">
+                <i class="fas fa-users"></i> Utilisateurs
+            </a>
+            <hr class="sidebar-divider">
+            <a href="/admin/" class="nav-item">
+                <i class="fas fa-cog"></i> Admin Django
+            </a>
+            <a href="{% url 'home' %}" class="nav-item">
+                <i class="fas fa-home"></i> Site
+            </a>
+            <a href="{% url 'account_logout' %}" class="nav-item logout">
+                <i class="fas fa-sign-out-alt"></i> Déconnexion
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+        <div class="admin-header">
+            <h1>Dashboard</h1>
+            <p class="text-muted">Bienvenue dans votre espace d'administration</p>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <i class="fas fa-cube"></i>
+                </div>
+                <div class="stat-content">
+                    <h4>Produits</h4>
+                    <p class="stat-value">{{ total_products }}</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <i class="fas fa-tag"></i>
+                </div>
+                <div class="stat-content">
+                    <h4>Catégories</h4>
+                    <p class="stat-value">{{ total_categories }}</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-content">
+                    <h4>Utilisateurs</h4>
+                    <p class="stat-value">{{ total_users }}</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <div class="stat-content">
+                    <h4>Commandes</h4>
+                    <p class="stat-value">{{ total_orders }}</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <div class="stat-content">
+                    <h4>Revenu Total</h4>
+                    <p class="stat-value">${{ total_revenue|floatformat:2 }}</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #ff9a56 0%, #ff6a88 100%);">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <h4>Commandes En Attente</h4>
+                    <p class="stat-value" style="color: #ff6a88;">{{ pending_orders }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Recent Orders -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h3>Commandes Récentes</h3>
+                    <a href="/admin/core/order/" class="btn-link">Voir tout →</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Numéro</th>
+                                <th>Client</th>
+                                <th>Montant</th>
+                                <th>Statut</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in recent_orders %}
+                            <tr>
+                                <td><strong>{{ order.order_number }}</strong></td>
+                                <td>{{ order.user.first_name|default:order.user.email }}</td>
+                                <td>${{ order.total_amount|floatformat:2 }}</td>
+                                <td>
+                                    <span class="badge badge-{{ order.status }}">
+                                        {% if order.status == 'pending' %}En attente
+                                        {% elif order.status == 'confirmed' %}Confirmée
+                                        {% elif order.status == 'shipped' %}Expédiée
+                                        {% elif order.status == 'delivered' %}Livrée
+                                        {% elif order.status == 'cancelled' %}Annulée
+                                        {% elif order.status == 'refunded' %}Remboursée
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td>{{ order.created_at|date:"d/m/Y H:i" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">Aucune commande</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Top Products -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h3>Produits Populaires</h3>
+                    <a href="/admin/core/product/" class="btn-link">Voir tout →</a>
+                </div>
+                <div class="product-list">
+                    {% for product in top_products %}
+                    <div class="product-item">
+                        {% if product.image %}
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-thumb">
+                        {% else %}
+                            <div class="product-thumb" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #999; font-size: 12px;">
+                                <i class="fas fa-image"></i>
+                            </div>
+                        {% endif %}
+                        <div class="product-info">
+                            <h5>{{ product.name }}</h5>
+                            <p class="product-category">{{ product.category.name }}</p>
+                            <div class="product-meta">
+                                <span class="price">${{ product.get_price|floatformat:2 }}</span>
+                                <span class="stock" style="color: {% if product.stock > 0 %}#28a745{% else %}#dc3545{% endif %}">
+                                    Stock: {{ product.stock }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">Aucun produit</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Recent Reviews -->
+            <div class="dashboard-card full-width">
+                <div class="card-header">
+                    <h3>Avis Récents</h3>
+                    <a href="/admin/core/review/" class="btn-link">Voir tout →</a>
+                </div>
+                <div class="reviews-list">
+                    {% for review in recent_reviews %}
+                    <div class="review-item">
+                        <div class="review-header">
+                            <div>
+                                <h5>{{ review.product.name }}</h5>
+                                <p class="text-muted">par {{ review.user.first_name|default:review.user.username }}</p>
+                            </div>
+                            <div class="review-rating">
+                                {% for i in "12345" %}
+                                    {% if forloop.counter <= review.rating %}
+                                    <i class="fas fa-star" style="color: #ffc107;"></i>
+                                    {% else %}
+                                    <i class="fas fa-star" style="color: #ddd;"></i>
+                                    {% endif %}
+                                {% endfor %}
+                                <span>({{ review.rating }}/5)</span>
+                            </div>
+                        </div>
+                        <p class="review-title"><strong>{{ review.title }}</strong></p>
+                        <p class="review-comment">{{ review.comment|truncatewords:20 }}</p>
+                        <small class="text-muted">{{ review.created_at|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">Aucun avis</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders by Status Chart -->
+        <div class="dashboard-card full-width">
+            <div class="card-header">
+                <h3>Commandes par Statut</h3>
+            </div>
+            <div class="status-breakdown">
+                {% for status_item in orders_by_status %}
+                <div class="status-item">
+                    <div class="status-label">
+                        {% if status_item.status == 'pending' %}En attente
+                        {% elif status_item.status == 'confirmed' %}Confirmée
+                        {% elif status_item.status == 'shipped' %}Expédiée
+                        {% elif status_item.status == 'delivered' %}Livrée
+                        {% elif status_item.status == 'cancelled' %}Annulée
+                        {% elif status_item.status == 'refunded' %}Remboursée
+                        {% endif %}
+                    </div>
+                    <div class="status-bar">
+                        <div class="status-fill status-{{ status_item.status }}" style="width: {{ status_item.count }}%"></div>
+                    </div>
+                    <div class="status-count">{{ status_item.count }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Monthly Revenue Info -->
+        <div class="info-box" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            <div class="info-content">
+                <h3>💰 Revenu ce mois</h3>
+                <p class="info-value">${{ revenue_this_month|floatformat:2 }}</p>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

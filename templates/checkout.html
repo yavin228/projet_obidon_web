@@ -1,0 +1,566 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Passer la commande - Obidon{% endblock %}
+
+{% block content %}
+<div class="checkout-page">
+    <h1>Passer la commande</h1>
+
+    <div class="checkout-wrapper">
+        <div class="checkout-form-section">
+            <!-- Shipping Address -->
+            <section class="checkout-section">
+                <h2>Adresse de livraison</h2>
+
+                {% if user_addresses %}
+                    <div class="address-options">
+                        {% for address in user_addresses %}
+                            <div class="address-radio">
+                                <input type="radio" id="addr_{{ address.id }}" name="shipping_address" value="{{ address.id }}">
+                                <label for="addr_{{ address.id }}">
+                                    <div class="address-text">
+                                        {{ address.street }}<br>
+                                        {{ address.city }} {{ address.postal_code }}
+                                    </div>
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="new-address-form">
+                    <h3>Nouvelle adresse</h3>
+                    <form method="post" class="form-grid">
+                        {% csrf_token %}
+                        <div class="form-row">
+                            <input type="text" name="first_name" placeholder="Prénom" required>
+                            <input type="text" name="last_name" placeholder="Nom" required>
+                        </div>
+                        <input type="text" name="street" placeholder="Adresse" required>
+                        <div class="form-row">
+                            <input type="text" name="city" placeholder="Ville" required>
+                            <input type="text" name="postal_code" placeholder="Code postal" required>
+                        </div>
+                        <input type="text" name="country" placeholder="Pays" required>
+                        <input type="tel" name="phone" placeholder="Téléphone" required>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Shipping Method -->
+            <section class="checkout-section">
+                <h2>Mode de livraison</h2>
+
+                <div class="shipping-options">
+                    <div class="shipping-option">
+                        <input type="radio" id="standard" name="shipping" value="standard" checked>
+                        <label for="standard">
+                            <div>
+                                <strong>Livraison Standard</strong>
+                                <p>5-7 jours</p>
+                            </div>
+                            <span class="price">Gratuit</span>
+                        </label>
+                    </div>
+
+                    <div class="shipping-option">
+                        <input type="radio" id="express" name="shipping" value="express">
+                        <label for="express">
+                            <div>
+                                <strong>Livraison Express</strong>
+                                <p>2-3 jours</p>
+                            </div>
+                            <span class="price">9.99€</span>
+                        </label>
+                    </div>
+
+                    <div class="shipping-option">
+                        <input type="radio" id="overnight" name="shipping" value="overnight">
+                        <label for="overnight">
+                            <div>
+                                <strong>Livraison Overnight</strong>
+                                <p>Lendemain</p>
+                            </div>
+                            <span class="price">19.99€</span>
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Payment Method -->
+            <section class="checkout-section">
+                <h2>Mode de paiement</h2>
+
+                <div class="payment-options">
+                    <div class="payment-option">
+                        <input type="radio" id="card" name="payment" value="card" checked>
+                        <label for="card">
+                            <i class="fas fa-credit-card"></i>
+                            Carte bancaire
+                        </label>
+                    </div>
+
+                    <div class="payment-option">
+                        <input type="radio" id="paypal" name="payment" value="paypal">
+                        <label for="paypal">
+                            <i class="fab fa-paypal"></i>
+                            PayPal
+                        </label>
+                    </div>
+
+                    <div class="payment-option">
+                        <input type="radio" id="bank" name="payment" value="bank">
+                        <label for="bank">
+                            <i class="fas fa-university"></i>
+                            Virement bancaire
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Card Payment Form -->
+                <div id="cardPaymentForm" class="payment-form">
+                    <div class="form-row">
+                        <input type="text" placeholder="Numéro de carte" maxlength="19">
+                    </div>
+                    <div class="form-row">
+                        <input type="text" placeholder="MM/AA" maxlength="5">
+                        <input type="text" placeholder="CVC" maxlength="3">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Order Review -->
+            <section class="checkout-section">
+                <h2>Vérification de la commande</h2>
+
+                <div class="terms-checkbox">
+                    <input type="checkbox" id="terms" name="terms">
+                    <label for="terms">
+                        J'accepte les <a href="#">conditions d'utilisation</a> et la <a href="#">politique de confidentialité</a>
+                    </label>
+                </div>
+
+                <button class="btn-place-order" onclick="placeOrder()">Passer la commande</button>
+            </section>
+        </div>
+
+        <!-- Order Summary -->
+        <aside class="order-summary">
+            <h2>Résumé de la commande</h2>
+
+            <div class="summary-items">
+                <div class="summary-item">
+                    <span>Produit 1</span>
+                    <span>x 2</span>
+                    <span class="price">49.98€</span>
+                </div>
+                <div class="summary-item">
+                    <span>Produit 2</span>
+                    <span>x 1</span>
+                    <span class="price">24.99€</span>
+                </div>
+            </div>
+
+            <div class="summary-divider"></div>
+
+            <div class="summary-totals">
+                <div class="summary-row">
+                    <span>Sous-total</span>
+                    <strong>74.97€</strong>
+                </div>
+                <div class="summary-row">
+                    <span>Livraison</span>
+                    <strong id="shippingCost">Gratuit</strong>
+                </div>
+                <div class="summary-row">
+                    <span>TVA</span>
+                    <strong>14.99€</strong>
+                </div>
+            </div>
+
+            <div class="summary-divider"></div>
+
+            <div class="summary-row total">
+                <span>Total</span>
+                <strong id="totalPrice">89.96€</strong>
+            </div>
+
+            <div class="security-badge">
+                <i class="fas fa-lock"></i>
+                <span>Paiement sécurisé SSL</span>
+            </div>
+        </aside>
+    </div>
+</div>
+
+<style>
+    .checkout-page {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+
+    .checkout-page h1 {
+        color: #5D4037;
+        margin-bottom: 30px;
+    }
+
+    .checkout-wrapper {
+        display: grid;
+        grid-template-columns: 1fr 350px;
+        gap: 30px;
+    }
+
+    .checkout-section {
+        background: white;
+        padding: 25px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    .checkout-section h2 {
+        color: #5D4037;
+        margin: 0 0 20px 0;
+        font-size: 18px;
+    }
+
+    .checkout-section h3 {
+        color: #5D4037;
+        margin: 20px 0 15px 0;
+        font-size: 14px;
+    }
+
+    /* Address Options */
+    .address-options {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .address-radio {
+        display: flex;
+        align-items: center;
+    }
+
+    .address-radio input {
+        margin-right: 10px;
+    }
+
+    .address-radio label {
+        flex: 1;
+        padding: 15px;
+        border: 2px solid #EEE;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .address-radio input:checked + label {
+        border-color: #D4AF37;
+        background-color: #FFFBF0;
+    }
+
+    .address-text {
+        font-size: 14px;
+        color: #666;
+    }
+
+    /* Form Styles */
+    .form-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .form-grid input,
+    .form-row input {
+        padding: 12px;
+        border: 1px solid #DDD;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .form-grid input:focus,
+    .form-row input:focus {
+        outline: none;
+        border-color: #D4AF37;
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+    }
+
+    /* Shipping Options */
+    .shipping-options {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .shipping-option {
+        display: flex;
+        align-items: center;
+    }
+
+    .shipping-option input {
+        margin-right: 12px;
+        cursor: pointer;
+    }
+
+    .shipping-option label {
+        flex: 1;
+        padding: 15px;
+        border: 2px solid #EEE;
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.3s;
+    }
+
+    .shipping-option input:checked + label {
+        border-color: #D4AF37;
+        background-color: #FFFBF0;
+    }
+
+    .shipping-option label div strong {
+        display: block;
+        color: #5D4037;
+    }
+
+    .shipping-option label div p {
+        color: #999;
+        font-size: 12px;
+        margin: 5px 0 0 0;
+    }
+
+    .shipping-option label .price {
+        color: #D4AF37;
+        font-weight: 700;
+    }
+
+    /* Payment Options */
+    .payment-options {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .payment-option {
+        display: flex;
+        align-items: center;
+    }
+
+    .payment-option input {
+        display: none;
+    }
+
+    .payment-option label {
+        flex: 1;
+        padding: 15px;
+        border: 2px solid #EEE;
+        border-radius: 4px;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.3s;
+    }
+
+    .payment-option input:checked + label {
+        border-color: #D4AF37;
+        background-color: #FFFBF0;
+    }
+
+    .payment-option label i {
+        display: block;
+        font-size: 24px;
+        color: #D4AF37;
+        margin-bottom: 8px;
+    }
+
+    .payment-option label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #5D4037;
+    }
+
+    .payment-form {
+        background-color: #F5F5F5;
+        padding: 15px;
+        border-radius: 4px;
+        display: none;
+    }
+
+    .payment-form.active {
+        display: block;
+    }
+
+    /* Terms Checkbox */
+    .terms-checkbox {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin: 20px 0;
+    }
+
+    .terms-checkbox input {
+        margin-top: 5px;
+    }
+
+    .terms-checkbox label {
+        font-size: 13px;
+        color: #666;
+        cursor: pointer;
+    }
+
+    .terms-checkbox a {
+        color: #D4AF37;
+        text-decoration: none;
+    }
+
+    .terms-checkbox a:hover {
+        text-decoration: underline;
+    }
+
+    /* Place Order Button */
+    .btn-place-order {
+        width: 100%;
+        background: linear-gradient(135deg, #5D4037 0%, #4E342E 100%);
+        color: white;
+        padding: 14px;
+        border: none;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-place-order:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        transform: translateY(-2px);
+    }
+
+    /* Order Summary */
+    .order-summary {
+        background: white;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        height: fit-content;
+        position: sticky;
+        top: 20px;
+    }
+
+    .order-summary h2 {
+        color: #5D4037;
+        margin: 0 0 20px 0;
+        font-size: 18px;
+    }
+
+    .summary-items {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 15px;
+    }
+
+    .summary-item {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 10px;
+        font-size: 13px;
+        color: #666;
+    }
+
+    .summary-item .price {
+        font-weight: 600;
+        color: #5D4037;
+    }
+
+    .summary-divider {
+        height: 1px;
+        background-color: #EEE;
+        margin: 15px 0;
+    }
+
+    .summary-totals {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        color: #666;
+    }
+
+    .summary-row strong {
+        color: #5D4037;
+    }
+
+    .summary-row.total {
+        font-size: 16px;
+        font-weight: 700;
+        color: #5D4037;
+    }
+
+    .security-badge {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px;
+        background-color: #E8F5E9;
+        border-radius: 4px;
+        color: #2E7D32;
+        font-size: 12px;
+        margin-top: 15px;
+    }
+
+    .security-badge i {
+        color: #4CAF50;
+    }
+
+    @media (max-width: 768px) {
+        .checkout-wrapper {
+            grid-template-columns: 1fr;
+        }
+
+        .order-summary {
+            position: static;
+        }
+
+        .payment-options {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script>
+    document.querySelectorAll('input[name="shipping"]').forEach(radio => {
+        radio.addEventListener('change', updateShippingCost);
+    });
+
+    function updateShippingCost() {
+        let cost = 0;
+        let checked = document.querySelector('input[name="shipping"]:checked').value;
+        if (checked === 'express') cost = 9.99;
+        else if (checked === 'overnight') cost = 19.99;
+
+        document.getElementById('shippingCost').innerText = cost === 0 ? 'Gratuit' : cost + '€';
+    }
+
+    function placeOrder() {
+        alert('Commande placée avec succès !');
+    }
+</script>
+{% endblock %}

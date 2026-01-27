@@ -1,0 +1,153 @@
+{% load static %}
+
+<!-- NAVBAR PRINCIPALE -->
+<nav class="navbar">
+    <div class="navbar-container">
+        <!-- Logo et nom -->
+        <div class="navbar-brand">
+            <a href="{% url 'home' %}" class="logo-link">
+                <div class="logo-container">
+                    <img src="{% static 'images/logo.jpeg' %}" alt="Obidon Logo" class="logo-img">
+                </div>
+            </a>
+        </div>
+
+        <!-- Adresse avec dropdown -->
+        <div class="navbar-address">
+            <div class="address-trigger">
+                <i class="fas fa-map-marker-alt"></i>
+                <div class="address-info">
+                    <span class="address-title">Livraison à</span>
+                    <span class="address-detail">Lomé, Togo</span>
+                </div>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="address-dropdown">
+                <input type="text" placeholder="Changer l'adresse...">
+                <button class="btn-confirm">Confirmer</button>
+            </div>
+        </div>
+
+        <!-- Barre de recherche -->
+        <div class="navbar-search">
+            <form class="search-form" method="get" action="{% url 'products' %}">
+                <select class="search-category" name="type">
+                    <option value="">Toutes catégories</option>
+                    <option value="cafe">Cafés</option>
+                    <option value="pain">Pains</option>
+                    <option value="machine">Machines à café</option>
+                    <option value="accessoire">Accessoires</option>
+                </select>
+                <input type="text" class="search-input" name="q" placeholder="Rechercher des produits...">
+                <button type="submit" class="search-btn">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
+        </div>
+
+        <!-- Langue de connexion -->
+        <div class="navbar-language">
+            <select class="language-select">
+                <option value="fr">Français</option>
+                <option value="en">English</option>
+                <option value="es">Español</option>
+            </select>
+        </div>
+
+        <!-- Menu utilisateur -->
+        <div class="navbar-user">
+            {% if user.is_authenticated %}
+                <!-- Profil connecté -->
+                <a href="{% url 'account' %}" class="user-profile-link">
+                    <div class="user-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="user-profile-info">
+                        <span class="user-greeting">Bonjour</span>
+                        <span class="user-name">@{{ user.username }}</span>
+                    </div>
+                </a>
+                
+                <!-- Menu dropdown caché -->
+                <div class="user-dropdown-menu">
+                    <a href="{% url 'account' %}" class="dropdown-item">
+                        <i class="fas fa-user"></i> Mon Profil
+                    </a>
+                    <a href="{% url 'account' %}" class="dropdown-item">
+                        <i class="fas fa-shopping-bag"></i> Mes Commandes
+                    </a>
+                    <a href="{% url 'account' %}" class="dropdown-item">
+                        <i class="fas fa-heart"></i> Favoris
+                    </a>
+                    <a href="{% url 'account' %}" class="dropdown-item">
+                        <i class="fas fa-cog"></i> Paramètres
+                    </a>
+                    <hr>
+                    <a href="{% url 'logout' %}" class="dropdown-item logout">
+                        <i class="fas fa-sign-out-alt"></i> Déconnexion
+                    </a>
+                </div>
+            {% else %}
+                <!-- Bouton de connexion si non connecté -->
+                <a href="{% url 'login' %}" class="btn-login-navbar">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span class="login-text">Connexion</span>
+                </a>
+            {% endif %}
+        </div>
+
+        <!-- Panier -->
+        <div class="navbar-cart">
+            <a href="{% url 'cart' %}" class="cart-link">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="cart-count">0</span>
+                <span class="cart-text">Panier</span>
+            </a>
+        </div>
+    </div>
+</nav>
+
+<!-- MENU CATÉGORIES -->
+<div class="categories-menu">
+    <div class="categories-container">
+        <!-- Catégorie Cafés avec dropdown -->
+        <div class="category-dropdown">
+            <a href="{% url 'product_type' 'cafe' %}" class="category-link active">
+                <i class="fas fa-coffee"></i>
+                <span>Cafés</span>
+            </a>
+        </div>
+
+        <!-- Catégorie Pains avec dropdown -->
+        <div class="category-dropdown">
+            <a href="{% url 'product_type' 'pain' %}" class="category-link">
+                <i class="fas fa-bread-slice"></i>
+                <span>Pains</span>
+            </a>
+        </div>
+
+        <!-- Catégorie Machines à café -->
+        <div class="category-dropdown">
+            <a href="{% url 'product_type' 'machine' %}" class="category-link">
+                <i class="fas fa-blender"></i>
+                <span>Machines à café</span>
+            </a>
+        </div>
+
+        <!-- Catégorie Accessoires -->
+        <div class="category-dropdown">
+            <a href="{% url 'product_type' 'accessoire' %}" class="category-link">
+                <i class="fas fa-utensils"></i>
+                <span>Accessoires</span>
+            </a>
+        </div>
+
+        <!-- Tous les produits -->
+        <a href="{% url 'products' %}" class="category-link">
+            <i class="fas fa-th"></i>
+            <span>Tous les produits</span>
+        </a>
+    </div>
+</div>
+
+<script src="{% static 'js/navbar.js' %}"></script>

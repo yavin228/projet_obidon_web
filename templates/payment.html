@@ -1,0 +1,598 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Paiement - Obidon{% endblock %}
+
+{% block content %}
+<div class="payment-page">
+    <div class="payment-container">
+        <!-- Payment Form -->
+        <div class="payment-form-section">
+            <h1>Finalisez votre paiement</h1>
+            
+            <form id="paymentForm" class="payment-form">
+                {% csrf_token %}
+                
+                <!-- Customer Info -->
+                <fieldset>
+                    <legend>Informations de contact</legend>
+                    
+                    <div class="form-row">
+                        <input type="text" name="first_name" placeholder="Prénom" required>
+                        <input type="text" name="last_name" placeholder="Nom" required>
+                    </div>
+                    
+                    <input type="email" name="email" placeholder="Email" required>
+                    <input type="tel" name="phone" placeholder="Téléphone" required>
+                </fieldset>
+                
+                <!-- Shipping Address -->
+                <fieldset>
+                    <legend>Adresse de livraison</legend>
+                    
+                    <input type="text" name="address" placeholder="Adresse complète" required>
+                    
+                    <div class="form-row">
+                        <input type="text" name="city" placeholder="Ville" required>
+                        <input type="text" name="postal_code" placeholder="Code postal" required>
+                    </div>
+                    
+                    <input type="text" name="country" placeholder="Pays" value="Togo" required>
+                </fieldset>
+                
+                <!-- Shipping Method -->
+                <fieldset>
+                    <legend>Mode de livraison</legend>
+                    
+                    <div class="shipping-option">
+                        <input type="radio" id="standard" name="shipping_method" value="standard" checked>
+                        <label for="standard">
+                            <span class="shipping-name">Livraison Standard</span>
+                            <span class="shipping-delay">5-7 jours</span>
+                            <span class="shipping-price">Gratuit</span>
+                        </label>
+                    </div>
+                    
+                    <div class="shipping-option">
+                        <input type="radio" id="express" name="shipping_method" value="express">
+                        <label for="express">
+                            <span class="shipping-name">Livraison Express</span>
+                            <span class="shipping-delay">2-3 jours</span>
+                            <span class="shipping-price">9.99€</span>
+                        </label>
+                    </div>
+                    
+                    <div class="shipping-option">
+                        <input type="radio" id="overnight" name="shipping_method" value="overnight">
+                        <label for="overnight">
+                            <span class="shipping-name">Livraison Overnight</span>
+                            <span class="shipping-delay">Lendemain</span>
+                            <span class="shipping-price">19.99€</span>
+                        </label>
+                    </div>
+                </fieldset>
+                
+                <!-- Card Payment Form -->
+                <fieldset class="card-payment-fieldset">
+                    <legend>Détails de la carte bancaire</legend>
+                    
+                    <div class="card-display">
+                        <div class="card-chip">
+                            <i class="fas fa-microchip"></i>
+                        </div>
+                        <div class="card-number-display" id="cardNumberDisplay">•••• •••• •••• ••••</div>
+                        <div class="card-holder-display">
+                            <small>Titulaire</small>
+                            <div id="cardHolderDisplay">VOTRE NOM</div>
+                        </div>
+                        <div class="card-expiry-display">
+                            <small>Valide jusqu'au</small>
+                            <div id="cardExpiryDisplay">MM/AA</div>
+                        </div>
+                    </div>
+                    
+                    <input type="text" name="card_holder" placeholder="Nom complet sur la carte" maxlength="25" required>
+                    
+                    <input type="text" name="card_number" placeholder="Numéro de carte (16 chiffres)" maxlength="16" inputmode="numeric" id="cardNumberInput" required>
+                    
+                    <div class="form-row">
+                        <input type="text" name="card_expiry" placeholder="MM/AA" maxlength="5" id="cardExpiryInput" required>
+                        <input type="text" name="card_cvc" placeholder="CVC" maxlength="4" inputmode="numeric" required>
+                    </div>
+                </fieldset>
+                
+                <!-- Conditions -->
+                <div class="terms-section">
+                    <input type="checkbox" id="terms" name="terms" required>
+                    <label for="terms">
+                        J'accepte les <a href="#">conditions d'utilisation</a> et la <a href="#">politique de confidentialité</a>
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn-pay" id="payButton">
+                    <i class="fas fa-lock"></i> Payer {{ final_total }}€
+                </button>
+            </form>
+        </div>
+        
+        <!-- Order Summary -->
+        <aside class="payment-summary">
+            <h2>Résumé de votre commande</h2>
+            
+            <div class="order-items">
+                {% for item in cart_items %}
+                    <div class="order-item">
+                        <div class="item-info">
+                            <h4>{{ item.product.name }}</h4>
+                            <p class="item-qty">Quantité: {{ item.quantity }}</p>
+                        </div>
+                        <div class="item-price">{{ item.total }}€</div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <div class="summary-divider"></div>
+            
+            <div class="summary-details">
+                <div class="summary-row">
+                    <span>Sous-total</span>
+                    <strong>{{ cart_total }}€</strong>
+                </div>
+                
+                <div class="summary-row">
+                    <span>Livraison</span>
+                    <strong id="summaryShipping">{{ shipping_cost }}€</strong>
+                </div>
+                
+                <div class="summary-row">
+                    <span>TVA (20%)</span>
+                    <strong>{{ tax }}€</strong>
+                </div>
+            </div>
+            
+            <div class="summary-divider"></div>
+            
+            <div class="summary-row total">
+                <span>Total</span>
+                <strong id="summaryTotal">{{ final_total }}€</strong>
+            </div>
+            
+            <div class="security-info">
+                <i class="fas fa-shield-alt"></i>
+                <p>Paiement 100% sécurisé. Vos données sont encryptées.</p>
+            </div>
+        </aside>
+    </div>
+</div>
+
+<style>
+    .payment-page {
+        background-color: #F5F5F5;
+        min-height: calc(100vh - 200px);
+        padding: 40px 20px;
+    }
+    
+    .payment-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 40px;
+    }
+    
+    .payment-form-section {
+        background: white;
+        padding: 40px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .payment-form-section h1 {
+        font-size: 28px;
+        margin-bottom: 30px;
+        color: #333;
+    }
+    
+    .payment-form fieldset {
+        margin-bottom: 30px;
+        border: none;
+        padding: 0;
+    }
+    
+    .payment-form legend {
+        font-size: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #333;
+        padding: 0 0 15px 0;
+        margin-bottom: 15px;
+        border-bottom: 2px solid #EEE;
+    }
+    
+    .payment-form input[type="text"],
+    .payment-form input[type="email"],
+    .payment-form input[type="tel"] {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 12px;
+        border: 1px solid #DDD;
+        border-radius: 4px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 14px;
+    }
+    
+    .payment-form input[type="text"]:focus,
+    .payment-form input[type="email"]:focus,
+    .payment-form input[type="tel"]:focus {
+        outline: none;
+        border-color: #D32F2F;
+        box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.1);
+    }
+    
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+    
+    .form-row input {
+        margin-bottom: 12px !important;
+    }
+    
+    /* Card Display */
+    .card-display {
+        background: linear-gradient(135deg, #D32F2F 0%, #B71C1C 100%);
+        color: white;
+        padding: 25px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        position: relative;
+        height: 200px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 0 8px 20px rgba(211, 47, 47, 0.3);
+    }
+    
+    .card-chip {
+        font-size: 35px;
+        opacity: 0.7;
+    }
+    
+    .card-number-display {
+        font-size: 24px;
+        letter-spacing: 2px;
+        font-weight: 600;
+    }
+    
+    .card-holder-display,
+    .card-expiry-display {
+        display: flex;
+        flex-direction: column;
+        font-size: 12px;
+        opacity: 0.8;
+    }
+    
+    .card-holder-display div,
+    .card-expiry-display div {
+        font-size: 16px;
+        font-weight: 600;
+        margin-top: 2px;
+    }
+    
+    .shipping-option,
+    .payment-option {
+        margin-bottom: 15px;
+    }
+    
+    .shipping-option input,
+    .payment-option input {
+        margin-right: 12px;
+    }
+    
+    .shipping-option label,
+    .payment-option label {
+        display: flex;
+        align-items: center;
+        padding: 12px;
+        border: 1px solid #DDD;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .shipping-option input:checked + label,
+    .payment-option input:checked + label {
+        border-color: #D32F2F;
+        background-color: #FFF5F5;
+    }
+    
+    .shipping-option label {
+        display: grid;
+        grid-template-columns: 1fr 100px 80px;
+        gap: 20px;
+        align-items: center;
+    }
+    
+    .shipping-name {
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .shipping-delay {
+        font-size: 12px;
+        color: #999;
+    }
+    
+    .shipping-price {
+        text-align: right;
+        font-weight: 600;
+        color: #D32F2F;
+    }
+    
+    .terms-section {
+        margin: 30px 0;
+        padding: 20px;
+        background-color: #F9F9F9;
+        border-radius: 4px;
+    }
+    
+    .terms-section input {
+        margin-right: 10px;
+    }
+    
+    .terms-section label {
+        cursor: pointer;
+        font-size: 14px;
+        color: #666;
+    }
+    
+    .terms-section a {
+        color: #D32F2F;
+        text-decoration: none;
+    }
+    
+    .terms-section a:hover {
+        text-decoration: underline;
+    }
+    
+    .btn-pay {
+        width: 100%;
+        padding: 15px;
+        background-color: #D32F2F;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+    
+    .btn-pay:hover {
+        background-color: #B71C1C;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
+    }
+    
+    .btn-pay:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    
+    /* Payment Summary */
+    .payment-summary {
+        background: white;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        height: fit-content;
+        position: sticky;
+        top: 20px;
+    }
+    
+    .payment-summary h2 {
+        font-size: 18px;
+        margin-bottom: 20px;
+        color: #333;
+    }
+    
+    .order-items {
+        margin-bottom: 20px;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .order-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #EEE;
+    }
+    
+    .order-item:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+    
+    .item-info h4 {
+        font-size: 14px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+    }
+    
+    .item-qty {
+        font-size: 12px;
+        color: #999;
+        margin: 0;
+    }
+    
+    .item-price {
+        font-weight: 700;
+        color: #333;
+    }
+    
+    .summary-divider {
+        height: 1px;
+        background-color: #EEE;
+        margin: 15px 0;
+    }
+    
+    .summary-details {
+        margin-bottom: 20px;
+    }
+    
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 14px;
+        margin-bottom: 10px;
+        color: #666;
+    }
+    
+    .summary-row.total {
+        font-size: 18px;
+        font-weight: 700;
+        color: #333;
+        margin-top: 15px;
+    }
+    
+    .security-info {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 15px;
+        background-color: #E8F5E9;
+        border-radius: 4px;
+        margin-top: 20px;
+    }
+    
+    .security-info i {
+        color: #4CAF50;
+        font-size: 16px;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+    
+    .security-info p {
+        font-size: 12px;
+        color: #2E7D32;
+        margin: 0;
+    }
+    
+    @media (max-width: 768px) {
+        .payment-container {
+            grid-template-columns: 1fr;
+        }
+        
+        .payment-summary {
+            position: static;
+        }
+        
+        .shipping-option label {
+            grid-template-columns: 1fr;
+            gap: 5px;
+        }
+        
+        .shipping-price {
+            text-align: left;
+        }
+    }
+</style>
+
+<script>
+    // Update card display in real-time
+    document.getElementById('cardNumberInput').addEventListener('input', function(e) {
+        const value = e.target.value.replace(/\s/g, '');
+        const formatted = value.replace(/(\d{4})/g, '$1 ').trim();
+        document.getElementById('cardNumberDisplay').textContent = formatted || '•••• •••• •••• ••••';
+    });
+    
+    document.querySelector('input[name="card_holder"]').addEventListener('input', function(e) {
+        document.getElementById('cardHolderDisplay').textContent = e.target.value.toUpperCase() || 'VOTRE NOM';
+    });
+    
+    document.getElementById('cardExpiryInput').addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length >= 2) {
+            value = value.slice(0, 2) + '/' + value.slice(2, 4);
+        }
+        e.target.value = value;
+        document.getElementById('cardExpiryDisplay').textContent = value || 'MM/AA';
+    });
+    
+    // Update shipping cost when method changes
+    document.querySelectorAll('input[name="shipping_method"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const costs = {
+                'standard': 0,
+                'express': 9.99,
+                'overnight': 19.99
+            };
+            
+            const cartTotal = parseFloat('{{ cart_total }}');
+            const tax = parseFloat('{{ tax }}');
+            const shippingCost = costs[this.value];
+            const total = (cartTotal + tax + shippingCost).toFixed(2);
+            
+            document.getElementById('summaryShipping').textContent = shippingCost.toFixed(2) + '€';
+            document.getElementById('summaryTotal').textContent = total + '€';
+            
+            const payBtn = document.getElementById('payButton');
+            payBtn.textContent = payBtn.innerHTML.replace(/\d+\.\d+€/, total + '€');
+        });
+    });
+    
+    // Handle form submission
+    document.getElementById('paymentForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const btn = document.getElementById('payButton');
+        const originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Traitement du paiement...';
+        
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData);
+        
+        fetch('/api/process-payment/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                btn.innerHTML = '<i class="fas fa-check"></i> Paiement réussi!';
+                btn.style.backgroundColor = '#4CAF50';
+                
+                setTimeout(() => {
+                    window.location.href = '/checkout/success/';
+                }, 2000);
+            } else {
+                alert('Erreur: ' + result.message);
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erreur lors du paiement');
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+        });
+    });
+</script>
+{% endblock %}

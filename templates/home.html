@@ -1,0 +1,704 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Obidon - Accueil{% endblock %}
+
+{% block content %}
+
+
+    <!--CAFES  -->
+
+
+<div class="home-container">
+    <!-- Section Titre -->
+    <h2 class="section-main-title">Nos catégories de cafés</h2>
+    
+    <!-- Hero Grid Section - 3 colonnes -->
+    <section class="hero-grid-section">
+
+
+         <!--Café en dosettes -->
+        <div class="hero-card">
+            <a href="{% url 'products' %}?category=cafe" class="hero-card-link">
+                <div class="hero-card-image">
+                    <img src="{% static 'images/coffe_dosettes.jpeg' %}" alt="Cafés dosettes"> 
+                </div>
+                <div class="hero-card-content">
+                    <h3>Cafés dosettes</h3>
+                    <p>Améliorez votre expérience café avec nos dosettes premium de café, offrant l’équilibre parfait entre saveur et commodité. </p>
+                    <span class="btn-discover">Explorer</span>
+                </div>
+            </a>
+        </div>
+
+       
+
+        <!--Café en capsules  -->
+        <div class="hero-card">
+            <a href="{% url 'products' %}?category=cafe" class="hero-card-link">
+                <div class="hero-card-image">
+                    <img src="{% static 'images/coffe_capsule.jpeg' %}" alt="Cafés en capsules">
+                </div>
+                <div class="hero-card-content">
+                    <h3>Cafés en capsules</h3>  
+                    <p>Découvrez notre sélection exclusive de cafés en dosettes. Savourez la qualité, expérimentez l'excellence à chaque tasse.</p>
+                    <span class="btn-discover">Explorer</span>
+                </div>
+            </a>
+        </div>
+
+       
+        <!--Café en grains -->
+        <div class="hero-card">
+            <a href="{% url 'products' %}?category=cafe" class="hero-card-link">
+                <div class="hero-card-image">
+                    <img src="{% static 'images/coffe_grain.jpeg' %}" alt="Cafe en grains"> 
+                </div>
+                <div class="hero-card-content">
+                    <h3>Cafés en grains</h3>
+                    <p>Découvrez notre sélection exclusive de cafés en dosettes. Savourez la qualité, expérimentez l'excellence à chaque tasse.</p>
+                    <span class="btn-discover">Explorer</span>
+                </div>
+            </a>
+        </div>
+
+        
+    </section>
+     <section class="hero-grid-section">
+
+         <!-- Café Premium -->
+        <div class="hero-card">
+            <a href="{% url 'products' %}?category=cafe" class="hero-card-link">
+                <div class="hero-card-image">
+                    <img src="{% static 'images/coffe_moulus.jpeg' %}" alt="Cafés Moulus">
+                </div>
+                <div class="hero-card-content">
+                    <h3>Cafés Moulus</h3>
+                    <p>Découvrez notre sélection exclusive de cafés en dosettes. Savourez la qualité, expérimentez l'excellence à chaque tasse.</p>
+                    <span class="btn-discover">Explorer</span>
+                </div>
+            </a>
+        </div>
+
+       
+       
+<!--Café en grains -->
+        <div class="hero-card">
+            <a href="{% url 'products' %}?category=cafe" class="hero-card-link">
+                <div class="hero-card-image">
+                    <img src="{% static 'images/coffe_american.jpg' %}" alt="Cafés Americains">
+                </div>
+                <div class="hero-card-content">
+                    <h3>Cafés Americains</h3>
+                    <p>American Coffee est la sélection que le Caffè Corsini propose aux amateurs de café américain : noir, intense, et parfait à savourer jusqu’à la toute dernière gorgée.</p>
+                    <span class="btn-discover">Explorer</span>
+                </div>
+            </a>
+        </div>
+
+
+        
+    </section>
+
+
+    <!--Pains  -->
+
+    <div class="home-container">
+    <!-- Section Titre -->
+    <h2 class="section-main-title">Nos catégories de Pains </h2>
+    
+    <!-- Hero Grid Section - 3 colonnes -->
+    <section class="hero-grid-section">
+        <!-- Café Premium -->
+        <div class="hero-card">
+            <a href="{% url 'products' %}?category=pains" class="hero-card-link">
+                <div class="hero-card-image">
+                    <img src="{% static 'images/pain_baguette.jpeg' %}" alt="Pain Baguette">
+                </div>
+                <div class="hero-card-content">
+                    <h3>Pain Baguette</h3>
+                    <p>Découvrez notre sélection exclusive de pains baguettes. Savourez la qualité, expérimentez l'excellence à chaque tasse.</p>
+                    <span class="btn-discover">Explorer</span>
+                </div>
+            </a>
+        </div>
+
+        <!-- Pain Artisanal -->
+        <div class="hero-card">
+            <a href="{% url 'products' %}?category=pains" class="hero-card-link">
+                <div class="hero-card-image">
+                    <img src="{% static 'images/gros_pain.jpg' %}" alt="Gros pain">
+                </div>
+                <div class="hero-card-content">
+                    <h3>Gros Pain</h3>
+                    <p>Savourez nos pains artisanaux fraîchement préparés. Tradition et authenticité se rencontrent dans chaque bouchée.</p>
+                    <span class="btn-discover">Explorer</span>
+                </div>
+            </a>
+        </div>
+
+        <!-- Viennoiseries -->
+        <div class="hero-card">
+            <a href="{% url 'products' %}?category=pains" class="hero-card-link">
+                <div class="hero-card-image">
+                    <img src="{% static 'images/pain_court.jpeg' %}" alt="Pain court">
+                </div>
+                <div class="hero-card-content">
+                    <h3>Pain Court</h3>
+                    <p>Croissants, pains au chocolat et autres délices pour commencer votre journée avec gourmandise.</p>
+                    <span class="btn-discover">Explorer</span>
+                </div>
+            </a>
+        </div>
+    </section>
+
+      <section class="hero-grid-section">
+
+         <!--Petit pain -->
+        <div class="hero-card">
+            <a href="{% url 'products' %}?category=pains" class="hero-card-link">
+                <div class="hero-card-image">
+                    <img src="{% static 'images/petit_pain.jpeg' %}" alt="Petit pain">
+                </div>
+                <div class="hero-card-content">
+                    <h3>Petit pain</h3>
+                    <p>Croissants, pains au chocolat et autres délices pour commencer votre journée avec gourmandise.</p>
+                    <span class="btn-discover">Explorer</span>
+                </div>
+            </a>
+        </div>
+
+         <div class="hero-card">
+            <a href="{% url 'products' %}?category=pains" class="hero-card-link">
+                <div class="hero-card-image">
+                    <img src="{% static 'images/pain_image2.jpg' %}" alt="Pain Artisanal Premium">
+                </div>
+                <div class="hero-card-content">
+                    <h3>Pain Artisanal Premium</h3>
+                    <p>Savourez nos pains artisanaux fraîchement préparés. Tradition et authenticité se rencontrent dans chaque bouchée.</p>
+                    <span class="btn-discover">Explorer</span>
+                </div>
+            </a>
+        </div>
+
+         <div class="hero-card">
+            <a href="{% url 'products' %}?category=pains" class="hero-card-link">
+                <div class="hero-card-image">
+                    <img src="{% static 'images/pain_imge1.jpg' %}" alt="Pain Artisanal Premium">
+                </div>
+                <div class="hero-card-content">
+                    <h3>Pain Artisanal Premium</h3>
+                    <p>Savourez nos pains artisanaux fraîchement préparés. Tradition et authenticité se rencontrent dans chaque bouchée.</p>
+                    <span class="btn-discover">Explorer</span>
+                </div>
+            </a>
+        </div>
+      </section>
+
+
+    <!--MACHINE A CAFE -->
+
+
+    <div class="home-container">
+    <!-- Section Titre -->
+    <h2 class="section-main-title">Nos Machines à café </h2>
+    
+    <!-- Hero Grid Section - 3 colonnes -->
+    <section class="hero-grid-section">
+        <!-- Café Premium -->
+        <div class="hero-card">
+            <a href="{% url 'products' %}?category=machines_cafe" class="hero-card-link">
+                <div class="hero-card-image">
+                    <img src="{% static 'images/machine_capsule.jpg' %}" alt="Machine à Capsules">
+                </div>
+                <div class="hero-card-content">
+                    <h3>Machine à Capsules</h3>
+                    <p>Découvrez notre sélection exclusive de cafés en dosettes. Savourez la qualité, expérimentez l'excellence à chaque tasse.</p>
+                    <span class="btn-discover">Explorer</span>
+                </div>
+            </a>
+        </div>
+
+        <!-- Pain Artisanal -->
+        <div class="hero-card">
+            <a href="{% url 'products' %}?category=pains" class="hero-card-link">
+                <div class="hero-card-image">
+                    <img src="{% static 'images/machine_expresso_moulu.jpg' %}" alt="Machine Expresso Héager Premium">
+                </div>
+                <div class="hero-card-content">
+                    <h3>Machine Expresso Moulus & Dossetes</h3>
+                    <p>Découvrez notre sélection exclusive de cafés en dosettes. Savourez la qualité, expérimentez l'excellence à chaque tasse.</p>
+                    <span class="btn-discover">Explorer</span>
+                </div>
+            </a>
+        </div>
+
+        <!--Machine à café haeger -->
+        <div class="hero-card">
+            <a href="{% url 'products' %}?category=viennoiseries" class="hero-card-link">
+                <div class="hero-card-image">
+                    <img src="{% static 'images/machine_cafe_heager.jpg' %}" alt="Machine à café haeger">
+                </div>
+                <div class="hero-card-content">
+                    <h3>Machine à café haeger</h3>
+                    <p>Croissants, pains au chocolat et autres délices pour commencer votre journée avec gourmandise.</p>
+                    <span class="btn-discover">Explorer</span>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    <!-- Featured Products Section -->
+    <section class="featured-section">
+        <h2>Produits En Vedette</h2>
+        <div class="products-grid">
+            {% for product in featured_products %}
+                <div class="featured-card">
+                    <div class="product-image">
+                        {% if product.image %}
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                        {% else %}
+                            <div class="image-placeholder">
+                                <i class="fas fa-image"></i>
+                            </div>
+                        {% endif %}
+                        {% if product.discount_percent %}
+                            <span class="discount-badge">-{{ product.discount_percent }}%</span>
+                        {% endif %}
+                    </div>
+                    <div class="product-info">
+                        <h3>{{ product.name }}</h3>
+                        <p class="category">{{ product.category.name }}</p>
+                        <div class="rating">
+                            <div class="stars">
+                                {% if product.rating >= 1 %}<i class="fas fa-star"></i>{% endif %}
+                                {% if product.rating >= 2 %}<i class="fas fa-star"></i>{% endif %}
+                                {% if product.rating >= 3 %}<i class="fas fa-star"></i>{% endif %}
+                                {% if product.rating >= 4 %}<i class="fas fa-star"></i>{% endif %}
+                                {% if product.rating >= 5 %}<i class="fas fa-star"></i>{% endif %}
+                            </div>
+                            <span>{{ product.rating }}/5</span>
+                        </div>
+                        <div class="price">
+                            {% if product.discount_percent %}
+                                <span class="original">{{ product.price }}€</span>
+                                <span class="sale">{{ product.sale_price }}€</span>
+                            {% else %}
+                                <span>{{ product.price }}€</span>
+                            {% endif %}
+                        </div>
+                        <a href="{% url 'product_detail' product.id %}" class="btn-view">Voir détail</a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Why Choose Us Section -->
+    <section class="why-choose-us">
+        <h2>Pourquoi nous choisir ?</h2>
+        <div class="benefits-grid">
+            <div class="benefit-card">
+                <div class="benefit-icon">
+                    <i class="fas fa-leaf"></i>
+                </div>
+                <h3>100% Naturel</h3>
+                <p>Nos produits sont sélectionnés pour leur qualité et pureté sans additifs.</p>
+            </div>
+
+            <div class="benefit-card">
+                <div class="benefit-icon">
+                    <i class="fas fa-truck"></i>
+                </div>
+                <h3>Livraison Rapide</h3>
+                <p>Commandes livrées en 24-48h. Livraison gratuite dès 50€.</p>
+            </div>
+
+            <div class="benefit-card">
+                <div class="benefit-icon">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <h3>100% Sécurisé</h3>
+                <p>Paiements sécurisés avec SSL 256-bit et protection garantie.</p>
+            </div>
+
+            <div class="benefit-card">
+                <div class="benefit-icon">
+                    <i class="fas fa-headset"></i>
+                </div>
+                <h3>Support Client</h3>
+                <p>Équipe disponible 24/7 pour répondre à vos questions.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter Section -->
+    <section class="newsletter-section">
+        <h2>Inscrivez-vous à notre Newsletter</h2>
+        <p>Recevez 10% de réduction sur votre première commande</p>
+        <form class="newsletter-form">
+            <input type="email" placeholder="Votre adresse email" required>
+            <button type="submit">S'inscrire</button>
+        </form>
+    </section>
+</div>
+
+
+<style>
+    .home-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    /* Titre principal de section */
+    .section-main-title {
+        font-size: 32px;
+        font-weight: 700;
+        color: #5D4037;
+        text-align: center;
+        margin: 40px 0 20px 0;
+    }
+
+    /* Hero Grid Section - 3 colonnes */
+    .hero-grid-section {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 30px;
+        padding: 20px 0 60px 0;
+        margin-bottom: 40px;
+    }
+
+    .hero-card {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+
+    .hero-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+    }
+
+    .hero-card-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+
+    .hero-card-image {
+        width: 100%;
+        height: 280px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .hero-card-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .hero-card:hover .hero-card-image img {
+        transform: scale(1.1);
+    }
+
+    .hero-card-content {
+        padding: 25px;
+        text-align: center;
+    }
+
+    .hero-card-content h3 {
+        font-size: 22px;
+        font-weight: 700;
+        color: #5D4037;
+        margin-bottom: 12px;
+    }
+
+    .hero-card-content p {
+        font-size: 14px;
+        color: #666;
+        line-height: 1.6;
+        margin-bottom: 20px;
+    }
+
+    .hero-card .btn-discover {
+        display: inline-block;
+        background: linear-gradient(135deg, #5D4037 0%, #4E342E 100%);
+        color: white;
+        padding: 12px 30px;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 13px;
+        transition: all 0.3s;
+    }
+
+    .hero-card:hover .btn-discover {
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        transform: translateY(-2px);
+    }
+
+    /* Featured Products Section */
+    .featured-section {
+        padding: 60px 0;
+    }
+
+    .featured-section h2 {
+        font-size: 32px;
+        color: #5D4037;
+        margin-bottom: 40px;
+        text-align: center;
+    }
+
+    .products-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 20px;
+    }
+
+    .featured-card {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        transition: all 0.3s;
+    }
+
+    .featured-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+
+    .product-image {
+        position: relative;
+        width: 100%;
+        height: 200px;
+        overflow: hidden;
+        background-color: #F5F5F5;
+    }
+
+    .product-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .image-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+        color: #DDD;
+    }
+
+    .discount-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: #D32F2F;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 11px;
+    }
+
+    .product-info {
+        padding: 15px;
+    }
+
+    .product-info h3 {
+        color: #5D4037;
+        margin: 0 0 5px 0;
+        font-size: 14px;
+    }
+
+    .category {
+        color: #999;
+        font-size: 11px;
+        margin: 0 0 10px 0;
+    }
+
+    .rating {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-bottom: 10px;
+        font-size: 11px;
+    }
+
+    .stars {
+        color: #D4AF37;
+        font-size: 12px;
+    }
+
+    .price {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 12px;
+        font-size: 13px;
+    }
+
+    .price .original {
+        text-decoration: line-through;
+        color: #999;
+    }
+
+    .price .sale {
+        font-weight: 700;
+        color: #D32F2F;
+    }
+
+    .btn-view {
+        display: block;
+        background: linear-gradient(135deg, #5D4037 0%, #4E342E 100%);
+        color: white;
+        padding: 10px;
+        text-align: center;
+        text-decoration: none;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .btn-view:hover {
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    /* Why Choose Us */
+    .why-choose-us {
+        padding: 60px 0;
+    }
+
+    .why-choose-us h2 {
+        font-size: 32px;
+        color: #5D4037;
+        margin-bottom: 40px;
+        text-align: center;
+    }
+
+    .benefits-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 30px;
+    }
+
+    .benefit-card {
+        text-align: center;
+        padding: 30px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s;
+    }
+
+    .benefit-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    .benefit-icon {
+        font-size: 48px;
+        color: #D4AF37;
+        margin-bottom: 20px;
+    }
+
+    .benefit-card h3 {
+        color: #5D4037;
+        margin: 0 0 10px 0;
+        font-size: 18px;
+    }
+
+    .benefit-card p {
+        color: #666;
+        font-size: 14px;
+        margin: 0;
+        line-height: 1.6;
+    }
+
+    /* Newsletter Section */
+    .newsletter-section {
+        background: linear-gradient(135deg, #5D4037 0%, #4E342E 100%);
+        color: white;
+        padding: 60px 30px;
+        border-radius: 8px;
+        text-align: center;
+        margin: 60px 0;
+    }
+
+    .newsletter-section h2 {
+        color: white;
+        margin-bottom: 10px;
+        font-size: 28px;
+    }
+
+    .newsletter-section p {
+        color: rgba(255,255,255,0.8);
+        margin-bottom: 20px;
+    }
+
+    .newsletter-form {
+        display: flex;
+        gap: 10px;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    .newsletter-form input {
+        flex: 1;
+        padding: 12px 15px;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .newsletter-form button {
+        background-color: #D4AF37;
+        color: #5D4037;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 4px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .newsletter-form button:hover {
+        background-color: #C4A027;
+    }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+        .hero-grid-section {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .hero-grid-section {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .hero-card-content h3 {
+            font-size: 20px;
+        }
+
+        .products-grid,
+        .benefits-grid {
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        }
+
+        .newsletter-form {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}

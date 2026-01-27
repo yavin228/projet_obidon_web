@@ -1,0 +1,243 @@
+/* CSS Variables */
+:root {
+    --white: #FFFFFF;
+    --red-dark: #D32F2F;
+}
+
+/* FOOTER STYLES */
+.footer {
+    background: linear-gradient(135deg, #D32F2F 0%, #B71C1C 100%);
+    color: var(--white);
+    margin-top: 4rem;
+    font-family: 'Poppins', 'Roboto', sans-serif;
+}
+
+/* Footer Content */
+.footer-content {
+    padding: 3rem 2rem;
+}
+
+.footer-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 3rem;
+}
+
+.footer-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.footer-section-contacts {
+    gap: 1.5rem;
+}
+
+.section-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--white);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 1.5rem;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Contact Info */
+.contact-info p {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin: 0.3rem 0;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.contact-info p strong {
+    font-weight: 700;
+    color: var(--white);
+}
+
+/* Social Links */
+.social-links {
+    display: flex;
+    gap: 0.8rem;
+    margin-top: 1rem;
+}
+
+.social-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    color: var(--white);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.social-link:hover {
+    background: var(--white);
+    color: #D32F2F;
+    transform: translateY(-3px);
+}
+
+/* Footer Logo */
+.footer-logo {
+    margin-top: 1.5rem;
+}
+
+.footer-logo-img {
+    height: 80px;
+    width: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.footer-logo-icon {
+    font-size: 3rem;
+    color: var(--white);
+    display: block;
+}
+
+/* Footer Links */
+.footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer-links li {
+    margin-bottom: 0.8rem;
+}
+
+.footer-links a {
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    display: inline-block;
+}
+
+.footer-links a:hover {
+    color: var(--white);
+    padding-left: 5px;
+    font-weight: 500;
+}
+
+/* Professional Section */
+.professional-text {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+}
+
+/* Footer Bottom */
+.footer-bottom {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-bottom-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2rem;
+}
+
+.footer-copyright {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0;
+}
+
+/* Payment Methods */
+.payment-methods {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.payment-label {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.payment-icons {
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+}
+
+.payment-icons i {
+    font-size: 1.8rem;
+    color: var(--white);
+    opacity: 0.9;
+    transition: all 0.3s ease;
+}
+
+.payment-icons i:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .footer-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .footer-content {
+        padding: 2rem 1rem;
+    }
+    
+    .footer-container {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+    
+    .footer-bottom-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .payment-methods {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .footer-content {
+        padding: 1.5rem 1rem;
+    }
+    
+    .section-title {
+        font-size: 0.8rem;
+        margin-bottom: 1rem;
+    }
+    
+    .contact-info p {
+        font-size: 0.85rem;
+    }
+    
+    .payment-icons {
+        gap: 0.5rem;
+    }
+    
+    .payment-icons i {
+        font-size: 1.5rem;
+    }
+}
