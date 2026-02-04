@@ -3,21 +3,114 @@
 
 {% block title %}Obidon - Accueil{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Styles pour l'effet hover recto/verso dans les produits en vedette */
+    .featured-product-image-container {
+        position: relative;
+        width: 100%;
+        height: 200px;
+        overflow: hidden;
+        background-color: #F5F5F5;
+    }
+
+    .featured-product-image-hover {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+
+    .featured-product-image-hover img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: opacity 0.4s ease, transform 0.6s ease;
+        backface-visibility: hidden;
+    }
+
+    .featured-product-image-hover .front-image {
+        opacity: 1;
+        transform: translateY(0);
+        z-index: 2;
+    }
+
+    .featured-product-image-hover .back-image {
+        opacity: 0;
+        transform: translateY(15px);
+        z-index: 1;
+    }
+
+    .featured-product-image-hover.has-back-image:hover .front-image {
+        opacity: 0;
+        transform: translateY(-15px);
+    }
+
+    .featured-product-image-hover.has-back-image:hover .back-image {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .featured-hover-indicator {
+        position: absolute;
+        bottom: 8px;
+        right: 8px;
+        background: rgba(212, 175, 55, 0.95);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: 600;
+        z-index: 3;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .featured-product-image-hover.has-back-image:hover .featured-hover-indicator {
+        opacity: 1;
+    }
+
+    .featured-hover-indicator i {
+        font-size: 8px;
+    }
+
+    .featured-back-image-badge {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        background: rgba(93, 64, 55, 0.9);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: 600;
+        z-index: 4;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        pointer-events: none;
+    }
+
+    .featured-back-image-badge i {
+        font-size: 8px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-
-
-    <!--CAFES  -->
-
-
 <div class="home-container">
     <!-- Section Titre -->
     <h2 class="section-main-title">Nos catégories de cafés</h2>
     
     <!-- Hero Grid Section - 3 colonnes -->
     <section class="hero-grid-section">
-
-
-         <!--Café en dosettes -->
+        <!-- Café en dosettes -->
         <div class="hero-card">
             <a href="{% url 'products' %}?category=cafe" class="hero-card-link">
                 <div class="hero-card-image">
@@ -25,15 +118,13 @@
                 </div>
                 <div class="hero-card-content">
                     <h3>Cafés dosettes</h3>
-                    <p>Améliorez votre expérience café avec nos dosettes premium de café, offrant l’équilibre parfait entre saveur et commodité. </p>
+                    <p>Améliorez votre expérience café avec nos dosettes premium de café, offrant l'équilibre parfait entre saveur et commodité.</p>
                     <span class="btn-discover">Explorer</span>
                 </div>
             </a>
         </div>
 
-       
-
-        <!--Café en capsules  -->
+        <!-- Café en capsules -->
         <div class="hero-card">
             <a href="{% url 'products' %}?category=cafe" class="hero-card-link">
                 <div class="hero-card-image">
@@ -47,8 +138,7 @@
             </a>
         </div>
 
-       
-        <!--Café en grains -->
+        <!-- Café en grains -->
         <div class="hero-card">
             <a href="{% url 'products' %}?category=cafe" class="hero-card-link">
                 <div class="hero-card-image">
@@ -61,12 +151,10 @@
                 </div>
             </a>
         </div>
-
-        
     </section>
-     <section class="hero-grid-section">
 
-         <!-- Café Premium -->
+    <section class="hero-grid-section">
+        <!-- Café Premium -->
         <div class="hero-card">
             <a href="{% url 'products' %}?category=cafe" class="hero-card-link">
                 <div class="hero-card-image">
@@ -80,9 +168,7 @@
             </a>
         </div>
 
-       
-       
-<!--Café en grains -->
+        <!-- Café américain -->
         <div class="hero-card">
             <a href="{% url 'products' %}?category=cafe" class="hero-card-link">
                 <div class="hero-card-image">
@@ -90,26 +176,32 @@
                 </div>
                 <div class="hero-card-content">
                     <h3>Cafés Americains</h3>
-                    <p>American Coffee est la sélection que le Caffè Corsini propose aux amateurs de café américain : noir, intense, et parfait à savourer jusqu’à la toute dernière gorgée.</p>
+                    <p>American Coffee est la sélection que le Caffè Corsini propose aux amateurs de café américain : noir, intense, et parfait à savourer jusqu'à la toute dernière gorgée.</p>
                     <span class="btn-discover">Explorer</span>
                 </div>
             </a>
         </div>
 
-
-        
+        <!-- Placeholder pour future catégorie -->
+        <div class="hero-card">
+            <a href="{% url 'products' %}?category=cafe" class="hero-card-link">
+                <div class="hero-card-image">
+                    <img src="{% static 'images/coffe_dosettes.jpeg' %}" alt="Autres cafés">
+                </div>
+                <div class="hero-card-content">
+                    <h3>Autres Cafés</h3>
+                    <p>Découvrez toute notre gamme de cafés premium sélectionnés avec soin pour vous offrir la meilleure expérience.</p>
+                    <span class="btn-discover">Explorer</span>
+                </div>
+            </a>
+        </div>
     </section>
 
-
-    <!--Pains  -->
-
-    <div class="home-container">
-    <!-- Section Titre -->
-    <h2 class="section-main-title">Nos catégories de Pains </h2>
+    <!-- Pains -->
+    <h2 class="section-main-title">Nos catégories de Pains</h2>
     
-    <!-- Hero Grid Section - 3 colonnes -->
     <section class="hero-grid-section">
-        <!-- Café Premium -->
+        <!-- Pain Baguette -->
         <div class="hero-card">
             <a href="{% url 'products' %}?category=pains" class="hero-card-link">
                 <div class="hero-card-image">
@@ -123,7 +215,7 @@
             </a>
         </div>
 
-        <!-- Pain Artisanal -->
+        <!-- Gros Pain -->
         <div class="hero-card">
             <a href="{% url 'products' %}?category=pains" class="hero-card-link">
                 <div class="hero-card-image">
@@ -137,7 +229,7 @@
             </a>
         </div>
 
-        <!-- Viennoiseries -->
+        <!-- Pain Court -->
         <div class="hero-card">
             <a href="{% url 'products' %}?category=pains" class="hero-card-link">
                 <div class="hero-card-image">
@@ -152,9 +244,8 @@
         </div>
     </section>
 
-      <section class="hero-grid-section">
-
-         <!--Petit pain -->
+    <section class="hero-grid-section">
+        <!-- Petit pain -->
         <div class="hero-card">
             <a href="{% url 'products' %}?category=pains" class="hero-card-link">
                 <div class="hero-card-image">
@@ -168,7 +259,8 @@
             </a>
         </div>
 
-         <div class="hero-card">
+        <!-- Pain Artisanal Premium 1 -->
+        <div class="hero-card">
             <a href="{% url 'products' %}?category=pains" class="hero-card-link">
                 <div class="hero-card-image">
                     <img src="{% static 'images/pain_image2.jpg' %}" alt="Pain Artisanal Premium">
@@ -181,7 +273,8 @@
             </a>
         </div>
 
-         <div class="hero-card">
+        <!-- Pain Artisanal Premium 2 -->
+        <div class="hero-card">
             <a href="{% url 'products' %}?category=pains" class="hero-card-link">
                 <div class="hero-card-image">
                     <img src="{% static 'images/pain_imge1.jpg' %}" alt="Pain Artisanal Premium">
@@ -193,19 +286,13 @@
                 </div>
             </a>
         </div>
-      </section>
+    </section>
 
-
-    <!--MACHINE A CAFE -->
-
-
-    <div class="home-container">
-    <!-- Section Titre -->
-    <h2 class="section-main-title">Nos Machines à café </h2>
+    <!-- Machines à café -->
+    <h2 class="section-main-title">Nos Machines à café</h2>
     
-    <!-- Hero Grid Section - 3 colonnes -->
     <section class="hero-grid-section">
-        <!-- Café Premium -->
+        <!-- Machine à Capsules -->
         <div class="hero-card">
             <a href="{% url 'products' %}?category=machines_cafe" class="hero-card-link">
                 <div class="hero-card-image">
@@ -219,9 +306,9 @@
             </a>
         </div>
 
-        <!-- Pain Artisanal -->
+        <!-- Machine Expresso Moulus & Dosettes -->
         <div class="hero-card">
-            <a href="{% url 'products' %}?category=pains" class="hero-card-link">
+            <a href="{% url 'products' %}?category=machines_cafe" class="hero-card-link">
                 <div class="hero-card-image">
                     <img src="{% static 'images/machine_expresso_moulu.jpg' %}" alt="Machine Expresso Héager Premium">
                 </div>
@@ -233,9 +320,9 @@
             </a>
         </div>
 
-        <!--Machine à café haeger -->
+        <!-- Machine à café haeger -->
         <div class="hero-card">
-            <a href="{% url 'products' %}?category=viennoiseries" class="hero-card-link">
+            <a href="{% url 'products' %}?category=machines_cafe" class="hero-card-link">
                 <div class="hero-card-image">
                     <img src="{% static 'images/machine_cafe_heager.jpg' %}" alt="Machine à café haeger">
                 </div>
@@ -254,17 +341,29 @@
         <div class="products-grid">
             {% for product in featured_products %}
                 <div class="featured-card">
-                    <div class="product-image">
-                        {% if product.image %}
-                            <img src="{{ product.image.url }}" alt="{{ product.name }}">
-                        {% else %}
-                            <div class="image-placeholder">
-                                <i class="fas fa-image"></i>
-                            </div>
-                        {% endif %}
-                        {% if product.discount_percent %}
-                            <span class="discount-badge">-{{ product.discount_percent }}%</span>
-                        {% endif %}
+                    <div class="featured-product-image-container">
+                        <div class="featured-product-image-hover {% if product.get_back_image_url and product.get_back_image_url != product.get_image_url %}has-back-image{% endif %}">
+                            <!-- Utilisation de get_image_url() -->
+                            <img src="{{ product.get_image_url }}" alt="{{ product.name }}" class="front-image">
+
+                            <!-- Utilisation de get_back_image_url() -->
+                            {% if product.get_back_image_url and product.get_back_image_url != product.get_image_url %}
+                                <img src="{{ product.get_back_image_url }}" alt="{{ product.name }} - verso" class="back-image">
+                            {% endif %}
+
+                            {% if product.get_back_image_url and product.get_back_image_url != product.get_image_url %}
+                                <div class="featured-back-image-badge">
+                                    <i class="fas fa-sync-alt"></i> Recto/verso
+                                </div>
+                                <div class="featured-hover-indicator">
+                                    <i class="fas fa-hand-pointer"></i> Survolez
+                                </div>
+                            {% endif %}
+
+                            {% if product.discount_percent %}
+                                <span class="discount-badge">-{{ product.discount_percent }}%</span>
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="product-info">
                         <h3>{{ product.name }}</h3>
@@ -342,7 +441,6 @@
         </form>
     </section>
 </div>
-
 
 <style>
     .home-container {
@@ -473,20 +571,6 @@
         box-shadow: 0 8px 20px rgba(0,0,0,0.15);
     }
 
-    .product-image {
-        position: relative;
-        width: 100%;
-        height: 200px;
-        overflow: hidden;
-        background-color: #F5F5F5;
-    }
-
-    .product-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
     .image-placeholder {
         width: 100%;
         height: 100%;
@@ -495,6 +579,9 @@
         justify-content: center;
         font-size: 40px;
         color: #DDD;
+        position: absolute;
+        top: 0;
+        left: 0;
     }
 
     .discount-badge {
@@ -507,6 +594,7 @@
         border-radius: 4px;
         font-weight: 600;
         font-size: 11px;
+        z-index: 5;
     }
 
     .product-info {
@@ -699,6 +787,72 @@
         .newsletter-form {
             flex-direction: column;
         }
+
+        .featured-product-image-container {
+            height: 150px;
+        }
+
+        .featured-hover-indicator,
+        .featured-back-image-badge {
+            font-size: 9px;
+            padding: 3px 6px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .section-main-title {
+            font-size: 24px;
+        }
+
+        .hero-card-image {
+            height: 200px;
+        }
     }
 </style>
+
+<script>
+    // Support mobile pour l'effet hover (tap and hold) sur les produits en vedette
+    document.addEventListener('DOMContentLoaded', function() {
+        const featuredProducts = document.querySelectorAll('.featured-product-image-hover.has-back-image');
+        
+        featuredProducts.forEach(function(product) {
+            let touchTimer;
+            
+            product.addEventListener('touchstart', function(e) {
+                touchTimer = setTimeout(() => {
+                    const frontImg = this.querySelector('.front-image');
+                    const backImg = this.querySelector('.back-image');
+                    if (frontImg && backImg) {
+                        frontImg.style.opacity = '0';
+                        frontImg.style.transform = 'translateY(-15px)';
+                        backImg.style.opacity = '1';
+                        backImg.style.transform = 'translateY(0)';
+                    }
+                    e.preventDefault();
+                }, 500);
+            });
+
+            product.addEventListener('touchend', function() {
+                clearTimeout(touchTimer);
+            });
+
+            product.addEventListener('touchmove', function() {
+                clearTimeout(touchTimer);
+            });
+
+            // Retour à l'image recto quand on clique
+            product.addEventListener('click', function(e) {
+                const frontImg = this.querySelector('.front-image');
+                const backImg = this.querySelector('.back-image');
+                if (frontImg && backImg && backImg.style.opacity === '1') {
+                    frontImg.style.opacity = '1';
+                    frontImg.style.transform = 'translateY(0)';
+                    backImg.style.opacity = '0';
+                    backImg.style.transform = 'translateY(15px)';
+                    e.stopPropagation();
+                }
+            });
+        });
+    });
+</script>
 {% endblock %}

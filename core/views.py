@@ -1,14 +1,23 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404,redirect
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from allauth.socialaccount.models import SocialApp
 from django.db.models import Sum, Q
 from .models import Category, Product, Order, Review
 from decimal import Decimal
 import json
+from .models import Currency, UserCurrencyPreference
+from .currency_service import CurrencyConverter, get_user_currency
+from .models import Currency, UserCurrencyPreference
+from .forms import ReviewForm
+
+
+
+
 
 def home(request):
     """Home page with featured products"""
@@ -415,4 +424,154 @@ def signup_view(request):
         'google_app': google_app
     }
     return render(request, 'signup.html', context)
+
+@login_required
+def update_currency_preference(request):
+    """Met à jour la préférence de devise de l'utilisateur"""
+    if request.method == 'POST':
+        currency_code = request.POST.get('currency')
+        
+        if currency_code not in CurrencyConverter.SUPPORTED_CURRENCIES:
+            messages.error(request, "Devise invalide")
+            return redirect('account')
+        
+        try:
+            # Récupérer ou créer l'objet Currency
+            currency, _ = Currency.objects.get_or_create(
+                code=currency_code,
+                defaults={
+                    'name': CurrencyConverter.SUPPORTED_CURRENCIES[currency_code]['name'],
+                    'symbol': CurrencyConverter.SUPPORTED_CURRENCIES[currency_code]['symbol'],
+                    'flag': CurrencyConverter.SUPPORTED_CURRENCIES[currency_code]['flag'],
+                    'is_default': CurrencyConverter.SUPPORTED_CURRENCIES[currency_code]['is_default']
+                }
+            )
+            
+            # Mettre à jour ou créer la préférence utilisateur
+            preference, created = UserCurrencyPreference.objects.get_or_create(
+                user=request.user
+            )
+            preference.preferred_currency = currency
+            preference.save()
+            
+            messages.success(request, f"Devise mise à jour: {currency.name}")
+            
+        except Exception as e:
+            messages.error(request, f"Erreur lors de la mise à jour: {str(e)}")
+    
+    return redirect('account')
+
+
+def api_exchange_rates(request):
+    """API pour récupérer les taux de change en temps réel"""
+    base_currency = request.GET.get('base', 'XOF')
+    
+    try:
+        rates_data = CurrencyConverter.get_exchange_rates(base_currency)
+        return JsonResponse({
+            'success': True,
+            'data': rates_data
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+def api_convert_price(request):
+    """API pour convertir un prix"""
+    try:
+        amount = float(request.GET.get('amount', 0))
+        from_currency = request.GET.get('from', 'XOF')
+        to_currency = request.GET.get('to', 'USD')
+        
+        result = CurrencyConverter.convert_price(amount, from_currency, to_currency)
+        
+        return JsonResponse({
+            'success': True,
+            'data': {
+                'amount': str(result['amount']),
+                'formatted': result['formatted'],
+                'symbol': result['symbol'],
+                'code': result['code']
+            }
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=400)
+
+
+@login_required
+def account_view(request):
+    """Vue de la page de profil avec gestion des devises"""
+    user_currency = get_user_currency(request.user)
+    
+    # Récupérer les informations sur toutes les devises
+    currencies = []
+    for code, info in CurrencyConverter.SUPPORTED_CURRENCIES.items():
+        currencies.append({
+            'code': code,
+            'name': info['name'],
+            'symbol': info['symbol'],
+            'flag': info['flag'],
+            'is_selected': code == user_currency
+        })
+    
+    context = {
+        'currencies': currencies,
+        'user_currency': user_currency,
+        'user': request.user
+    }
+    
+    return render(request, 'account.html', context)
+
+
+# Context processor pour rendre la devise disponible dans tous les templates
+def currency_context(request):
+    """Ajoute les informations de devise au contexte global"""
+    user_currency = 'XOF'
+    
+    if request.user.is_authenticated:
+        user_currency = get_user_currency(request.user)
+    
+    return {
+        'user_currency': user_currency,
+        'currencies': CurrencyConverter.SUPPORTED_CURRENCIES,
+        'currency_converter': CurrencyConverter
+    }
+
+@login_required
+def add_review(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    
+    # Vérifier si l'utilisateur a déjà donné un avis
+    if Review.objects.filter(product=product, user=request.user).exists():
+        messages.error(request, "Vous avez déjà donné votre avis sur ce produit.")
+        return redirect('product_detail', product_id=product.id)
+    
+    if request.method == 'POST':
+        form = ReviewForm(request.POST)
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.product = product
+            review.user = request.user
+            review.is_verified = True  # À adapter selon ta logique (achat vérifié ?)
+            review.save()
+            messages.success(request, "Merci pour votre avis ! Il est maintenant visible.")
+            return redirect('product_detail', product_id=product.id)
+    else:
+        form = ReviewForm()
+    
+    # Pour afficher la page complète avec le formulaire
+    context = {
+        'product': product,
+        'reviews': product.reviews.select_related('user').order_by('-created_at'),
+        'review_form': form,
+        'has_reviewed': Review.objects.filter(product=product, user=request.user).exists(),
+    }
+    return render(request, 'products/product_detail.html', context)
+
 

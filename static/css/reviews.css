@@ -1,0 +1,106 @@
+/* reviews.css - Styles pour la section avis et notation */
+
+/* ===== SECTION REVIEWS ===== */
+.reviews-section {
+    margin-bottom: 60px;
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.reviews-section h2 {
+    color: #5D4037;
+    margin-bottom: 30px;
+    font-size: 28px;
+    font-weight: 700;
+    border-bottom: 3px solid #D4AF37;
+    padding-bottom: 10px;
+}
+
+/* ===== FORMULAIRE D'AVIS ===== */
+.review-form-container {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    padding: 30px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    margin-bottom: 40px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+.review-form-container h3 {
+    color: #5D4037;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.review-invite {
+    color: #666;
+    font-size: 15px;
+    margin-bottom: 25px;
+    text-align: center;
+    font-style: italic;
+}
+
+/* ===== SYSTÈME D'ÉTOILES INTERACTIF ===== */
+.star-rating {
+    display: inline-flex;
+    gap: 6px;                   /* espace entre étoiles */
+    font-size: 2.4rem;          /* taille confortable – ajuste si besoin */
+    direction: ltr;             /* gauche → droite */
+    user-select: none;
+}
+
+.star {
+    color: #ddd;                /* gris clair = vide par défaut */
+    cursor: pointer;
+    transition: color 0.18s ease, transform 0.15s ease;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Étoiles remplies (sélectionnées ou survol) */
+.star-filled {
+    color: #f1c40f;             /* jaune/or classique */
+    text-shadow: 0 0 8px rgba(241, 196, 15, 0.5);
+}
+
+/* Étoiles vides (non remplies) */
+.star-empty {
+    color: #ddd;
+}
+
+/* Feedback survol individuel (optionnel mais agréable) */
+.star:hover {
+    transform: scale(1.18);
+    color: #f39c12;             /* un peu plus orange au survol */
+}
+
+/* Quand on survol une étoile → remplissage progressif via JS */
+.star-rating:hover .star-filled {
+    color: #f1c40f;
+}
+
+/* Texte descriptif sous les étoiles */
+#rating-text {
+    display: block;
+    margin-top: 10px;
+    font-size: 1.1rem;
+    color: #5D4037;
+    font-weight: 500;
+    text-align: center;
+    min-height: 1.5em;
+    transition: transform 0.2s ease;
+}
+
+/* Animation shake quand validation échoue */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
+    20%, 40%, 60%, 80% { transform: translateX(6px); }
+}
+
+.star-rating.shake {
+    animation: shake 0.55s cubic-bezier(.36,.07,.19,.97) both;
+}

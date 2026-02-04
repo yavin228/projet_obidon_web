@@ -1,9 +1,10 @@
 from django.urls import path
 from django.contrib.auth.views import LogoutView
+from . import views
 from .views import (
-    home, login_view, signup_view, account_view, products_view, 
+    api_convert_price, api_exchange_rates, home, login_view, signup_view, account_view, products_view, 
     product_detail_view, product_type_view, cart_view, checkout_view, add_to_cart_ajax, 
-    process_payment, payment_success_view
+    process_payment, payment_success_view, update_currency_preference
 )
 from .dashboard_views import dashboard, dashboard_analytics
 
@@ -23,4 +24,10 @@ urlpatterns = [
     path('api/process-payment/', process_payment, name='process_payment'),
     path('admin-dashboard/', dashboard, name='dashboard'),
     path('admin-dashboard/analytics/', dashboard_analytics, name='dashboard_analytics'),
+    # URLs pour la gestion des devises
+    path('currency/update/',update_currency_preference, name='update_currency'),
+    path('api/exchange-rates/',api_exchange_rates, name='api_exchange_rates'),
+    path('api/convert-price/',api_convert_price, name='api_convert_price'),
+    path('product/<int:product_id>/review/', views.add_review, name='add_review'),
 ]
+

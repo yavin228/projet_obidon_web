@@ -49,6 +49,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.views.currency_context',
             ],
         },
     },
@@ -89,3 +90,35 @@ SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
 LOGIN_REDIRECT_URL = '/'
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'
 SOCIALACCOUNT_ADAPTER = 'allauth.socialaccount.adapter.DefaultSocialAccountAdapter'
+
+
+# EMAIL CONFIG (GMAIL)
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+EMAIL_HOST_USER = 'yavinmitekor@gmail.com'
+EMAIL_HOST_PASSWORD = 'MOT_DE_PASSE_APPLICATION'
+
+DEFAULT_FROM_EMAIL = 'Projet Obidon <yavinmitekor@gmail.com>'
+
+# Configuration des devises
+CURRENCY_SETTINGS = {
+    'DEFAULT_CURRENCY': 'XOF',  # Devise par défaut
+    'SUPPORTED_CURRENCIES': ['XOF', 'USD', 'EUR'],
+    'EXCHANGE_RATE_API_URL': 'https://api.exchangerate-api.com/v4/latest/',
+    'CACHE_TIMEOUT': 3600,  # Cache des taux de change pendant 1 heure
+    'AUTO_UPDATE_RATES': True,  # Mise à jour automatique des taux
+}
+
+# Cache configuration (si vous n'en avez pas déjà)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+        'TIMEOUT': 3600,
+    }
+}

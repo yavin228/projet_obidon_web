@@ -3,6 +3,123 @@
 
 {% block title %}{{ product.name }} - Obidon{% endblock %}
 
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/reviews.css' %}">
+    <style>
+        /* Styles pour l'effet hover recto/verso */
+        .product-image-hover-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+        }
+
+        .product-image-hover {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .product-image-hover img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: opacity 0.5s ease, transform 0.8s ease;
+            backface-visibility: hidden;
+        }
+
+        .product-image-hover .front-image {
+            opacity: 1;
+            transform: translateY(0);
+            z-index: 2;
+        }
+
+        .product-image-hover .back-image {
+            opacity: 0;
+            transform: translateY(20px);
+            z-index: 1;
+            border: 2px solid #D4AF37;
+        }
+
+        .product-image-hover.has-back-image:hover .front-image {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+        .product-image-hover.has-back-image:hover .back-image {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .hover-indicator {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background: rgba(212, 175, 55, 0.9);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 3;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .product-image-hover.has-back-image:hover .hover-indicator {
+            opacity: 1;
+        }
+
+        .hover-indicator i {
+            font-size: 10px;
+        }
+
+        .image-legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .image-legend span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .legend-front {
+            background-color: #5D4037;
+        }
+
+        .legend-back {
+            background-color: #D4AF37;
+        }
+    </style>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/reviews.js' %}" defer></script>
+{% endblock %}
+
 {% block content %}
 <div class="product-detail-page">
     <!-- Breadcrumb -->
@@ -17,26 +134,88 @@
     </div>
 
     <div class="product-detail-wrapper">
-        <!-- Product Images -->
-        <div class="product-images">
-            <div class="main-image">
-                {% if product.image %}
-                    <img src="{{ product.image.url }}" alt="{{ product.name }}" id="mainImage">
-                {% else %}
-                    <div class="image-placeholder">
-                        <i class="fas fa-image"></i>
-                    </div>
-                {% endif %}
+        <!-- Product Gallery -->
+        <div class="product-gallery">
+            <!-- Image principale avec effet hover -->
+            <div class="product-image-hover-container">
+                <div class="product-image-hover {% if product.back_image %}has-back-image{% endif %}">
+                    <!-- Image recto -->
+                    <img 
+                        id="mainProductImage"
+                        src="{{ product.get_image_url }}" 
+                        alt="{{ product.name }}" 
+                        class="front-image"
+                        loading="lazy"
+                    >
+                    
+                    <!-- Image verso (si elle existe) -->
+                    {% if product.back_image %}
+                        <img 
+                            src="{{ product.get_back_image_url }}" 
+                            alt="{{ product.name }} - verso" 
+                            class="back-image"
+                            loading="lazy"
+                        >
+                        <div class="hover-indicator">
+                            <i class="fas fa-sync-alt"></i> Survolez pour voir le verso
+                        </div>
+                    {% endif %}
+                </div>
             </div>
 
-            <div class="thumbnail-images">
-                {% if product.image %}
-                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="thumbnail active" onclick="changeImage(this)">
+            <!-- Miniatures en dessous (thumbnails) -->
+            <div class="thumbnails">
+                <!-- Image principale en miniature -->
+                <img 
+                    src="{{ product.get_thumbnail_url }}" 
+                    alt="{{ product.name }} - recto"
+                    class="thumbnail active"
+                    data-full="{{ product.get_image_url }}"
+                    data-type="front"
+                    onclick="changeMainImage(this)"
+                    loading="lazy"
+                >
+
+                <!-- Image verso en miniature (si elle existe) -->
+                {% if product.back_image %}
+                    <img 
+                        src="{{ product.get_back_image_url }}" 
+                        alt="{{ product.name }} - verso"
+                        class="thumbnail"
+                        data-full="{{ product.get_back_image_url }}"
+                        data-type="back"
+                        onclick="changeMainImage(this)"
+                        loading="lazy"
+                        title="Cliquez pour voir le verso"
+                    >
                 {% endif %}
-                {% for img in product.images.all %}
-                    <img src="{{ img.image.url }}" alt="{{ img.alt_text }}" class="thumbnail" onclick="changeImage(this)">
+
+                <!-- Toutes les images supplémentaires -->
+                {% for img in product.gallery_images.all %}
+                    <img 
+                        src="{{ img.get_image_url }}" 
+                        alt="{{ img.alt_text|default:product.name }}"
+                        class="thumbnail"
+                        data-full="{{ img.get_image_url }}"
+                        onclick="changeMainImage(this)"
+                        loading="lazy"
+                    >
                 {% endfor %}
             </div>
+
+            <!-- Légende des images -->
+            {% if product.back_image %}
+                <div class="image-legend">
+                    <span>
+                        <span class="legend-dot legend-front"></span>
+                        Recto
+                    </span>
+                    <span>
+                        <span class="legend-dot legend-back"></span>
+                        Verso (survolez l'image)
+                    </span>
+                </div>
+            {% endif %}
         </div>
 
         <!-- Product Info -->
@@ -46,6 +225,11 @@
             <div class="product-meta">
                 <span class="category-badge">{{ product.category.name }}</span>
                 <span class="product-type">{{ product.get_product_type_display }}</span>
+                {% if product.back_image %}
+                    <span class="back-image-badge" style="background-color: #D4AF37; color: white; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                        <i class="fas fa-sync-alt"></i> Vue recto/verso
+                    </span>
+                {% endif %}
             </div>
 
             <div class="product-rating-section">
@@ -87,15 +271,18 @@
             <p class="product-description">{{ product.description }}</p>
 
             <div class="product-stock">
-                {% if product.stock > 0 %}
-                    <span class="in-stock">
-                        <i class="fas fa-check-circle"></i> En stock
-                    </span>
-                    <span class="stock-count">({{ product.stock }} disponibles)</span>
+                {% if product.display_stock %}
+                    {% if product.stock > 0 %}
+                        <span class="in-stock">
+                            <i class="fas fa-check-circle" style="color: #2bb704; font-weight: bold;"></i> En stock
+                        </span>
+                    {% else %}
+                        <span class="out-of-stock">
+                            <i class="fas fa-times-circle" style="color: #d60404; font-weight: bold;"></i> Rupture de stock
+                        </span>
+                    {% endif %}
                 {% else %}
-                    <span class="out-of-stock">
-                        <i class="fas fa-times-circle"></i> Rupture de stock
-                    </span>
+                    <span class="stock-hidden" style="color: #caba08; font-weight: bold;">Disponible sur commande</span>
                 {% endif %}
             </div>
 
@@ -144,51 +331,110 @@
                         <p>30 jours</p>
                     </div>
                 </div>
+                {% if product.back_image %}
+                <div class="feature">
+                    <i class="fas fa-sync-alt"></i>
+                    <div>
+                        <strong>Vue 360°</strong>
+                        <p>Recto & verso</p>
+                    </div>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
 
     <!-- Reviews Section -->
     <div class="reviews-section">
-        <h2>Avis Clients</h2>
+        <h2>Avis Clients ({{ product.reviews.count }})</h2>
 
-        {% if reviews %}
-            <div class="reviews-list">
-                {% for review in reviews %}
-                    <div class="review-item">
-                        <div class="review-header">
-                            <strong>{{ review.user.get_full_name }}</strong>
-                            {% if review.is_verified %}
-                                <span class="verified-badge">Achat vérifié</span>
-                            {% endif %}
-                        </div>
-
-                        <div class="review-rating">
-                            {% if review.rating >= 1 %}<i class="fas fa-star"></i>{% endif %}
-                            {% if review.rating >= 2 %}<i class="fas fa-star"></i>{% endif %}
-                            {% if review.rating >= 3 %}<i class="fas fa-star"></i>{% endif %}
-                            {% if review.rating >= 4 %}<i class="fas fa-star"></i>{% endif %}
-                            {% if review.rating >= 5 %}<i class="fas fa-star"></i>{% endif %}
-                            {% if review.rating < 5 %}
-                                {% for i in "x"|rjust:"5" %}
-                                    {% if forloop.counter > review.rating %}<i class="far fa-star"></i>{% endif %}
+        <!-- Formulaire pour ajouter un avis -->
+        {% if user.is_authenticated %}
+            {% if not has_reviewed %}
+                <div class="review-form-container">
+                    <h3>Donnez votre avis</h3>
+                    <p class="review-invite">Votre expérience compte ! Partagez-la avec les autres acheteurs.</p>
+                    
+                    <form method="post" action="{% url 'add_review' product.id %}" class="review-form" id="reviewForm">
+                        {% csrf_token %}
+                        
+                        <!-- Sélecteur d'étoiles interactif -->
+                        <div class="star-rating-container">
+                            <div class="star-rating" id="starRating">
+                                <input type="hidden" name="rating" id="rating-value" value="0">
+                                {% for i in "12345" %}
+                                    <span class="star" data-value="{{ forloop.counter }}">★</span>
                                 {% endfor %}
-                            {% endif %}
-                            <span class="rating-label">{{ review.rating }}/5</span>
+                            </div>
+                            <span id="rating-text">Sélectionnez une note</span>
                         </div>
 
-                        <h4 class="review-title">{{ review.title }}</h4>
-                        <p class="review-comment">{{ review.comment }}</p>
-
-                        <div class="review-date">
-                            <small>{{ review.created_at|date:"d M Y" }}</small>
+                        <!-- Titre optionnel -->
+                        <div class="form-group">
+                            <label for="id_title">Titre de votre avis (optionnel)</label>
+                            {{ review_form.title }}
                         </div>
-                    </div>
-                {% endfor %}
-            </div>
+
+                        <!-- Zone de commentaire -->
+                        <div class="form-group comment-area">
+                            <label for="id_comment">Votre avis</label>
+                            <textarea 
+                                name="comment" 
+                                id="id_comment"
+                                rows="8" 
+                                placeholder="Votre avis ici... (qualité, goût, emballage, livraison, rapport qualité/prix...)"
+                                required
+                            ></textarea>
+                        </div>
+
+                        <button type="submit" class="btn-submit-review" id="submitReviewBtn">Publier mon avis</button>
+                    </form>
+                </div>
+            {% else %}
+                <p class="already-reviewed">Vous avez déjà donné votre avis sur ce produit. Merci !</p>
+            {% endif %}
         {% else %}
-            <p class="no-reviews">Aucun avis pour ce produit. Soyez le premier à en laisser un !</p>
+            <p class="login-to-review">
+                <a href="{% url 'login' %}?next={{ request.path }}">Connectez-vous</a> 
+                pour laisser votre avis.
+            </p>
         {% endif %}
+
+        <!-- Liste des avis -->
+        <div class="reviews-list">
+            {% for review in reviews %}
+                <div class="review-item">
+                    <div class="review-header">
+                        <div class="review-rating">
+                            {% for i in "12345" %}
+                                <i class="fa{% if forloop.counter <= review.rating %}s{% else %}r{% endif %} fa-star"></i>
+                            {% endfor %}
+                            <span class="rating-number">({{ review.rating }}/5)</span>
+                        </div>
+                        {% if review.is_verified %}
+                            <span class="verified-badge">
+                                <i class="fas fa-check-circle"></i> Achat vérifié
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    {% if review.title %}
+                        <h4 class="review-title">{{ review.title }}</h4>
+                    {% endif %}
+                    
+                    <p class="review-comment">{{ review.comment|linebreaks }}</p>
+                    
+                    <div class="review-meta">
+                        <span class="review-author">Par {{ review.user.get_full_name|default:review.user.username }}</span>
+                        <span class="review-date">{{ review.created_at|date:"d M Y" }}</span>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="no-reviews">
+                    <p>Aucun avis pour le moment. Soyez le premier à partager votre expérience !</p>
+                </div>
+            {% endfor %}
+        </div>
     </div>
 
     <!-- Related Products -->
@@ -200,7 +446,14 @@
                     <div class="related-card">
                         <div class="related-image">
                             {% if related.image %}
-                                <img src="{{ related.image.url }}" alt="{{ related.name }}">
+                                <div class="product-image-hover-container" style="height: 150px;">
+                                    <div class="product-image-hover {% if related.back_image %}has-back-image{% endif %}">
+                                        <img src="{{ related.get_image_url }}" alt="{{ related.name }}" class="front-image">
+                                        {% if related.back_image %}
+                                            <img src="{{ related.get_back_image_url }}" alt="{{ related.name }} - verso" class="back-image">
+                                        {% endif %}
+                                    </div>
+                                </div>
                             {% else %}
                                 <div class="image-placeholder">
                                     <i class="fas fa-image"></i>
@@ -249,42 +502,38 @@
         border-radius: 8px;
     }
 
-    .product-images {
+    /* Product Gallery Styles */
+    .product-gallery {
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    .thumbnails {
         display: flex;
-        flex-direction: column;
-        gap: 15px;
-    }
-
-    .main-image {
-        width: 100%;
-        height: 400px;
-        background-color: #F5F5F5;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-
-    .main-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .thumbnail-images {
-        display: flex;
-        gap: 10px;
-        overflow-x: auto;
+        gap: 12px;
+        margin-top: 16px;
+        justify-content: center;
+        flex-wrap: wrap;
     }
 
     .thumbnail {
         width: 80px;
         height: 80px;
-        border: 2px solid #EEE;
-        border-radius: 4px;
+        object-fit: cover;
+        border-radius: 6px;
+        border: 2px solid #eee;
         cursor: pointer;
-        transition: border-color 0.3s;
+        transition: all 0.25s;
     }
 
-    .thumbnail.active {
+    .thumbnail.active,
+    .thumbnail:hover {
+        border-color: #D4AF37;
+        transform: scale(1.08);
+    }
+
+    .thumbnail[data-type="back"] {
+        border-style: dashed;
         border-color: #D4AF37;
     }
 
@@ -314,6 +563,8 @@
         display: flex;
         gap: 10px;
         margin-bottom: 15px;
+        flex-wrap: wrap;
+        align-items: center;
     }
 
     .category-badge, .product-type {
@@ -417,11 +668,6 @@
     .out-of-stock {
         color: #D32F2F;
         font-weight: 600;
-    }
-
-    .stock-count {
-        color: #999;
-        margin-left: 5px;
     }
 
     .quantity-selector {
@@ -544,87 +790,6 @@
         margin: 0;
     }
 
-    /* Reviews Section */
-    .reviews-section {
-        margin-bottom: 60px;
-        background: white;
-        padding: 30px;
-        border-radius: 8px;
-    }
-
-    .reviews-section h2 {
-        color: #5D4037;
-        margin-bottom: 20px;
-    }
-
-    .reviews-list {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-    }
-
-    .review-item {
-        padding: 20px;
-        border: 1px solid #EEE;
-        border-radius: 4px;
-    }
-
-    .review-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
-    }
-
-    .verified-badge {
-        background-color: #4CAF50;
-        color: white;
-        padding: 3px 8px;
-        border-radius: 3px;
-        font-size: 11px;
-        font-weight: 600;
-    }
-
-    .review-rating {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 10px;
-    }
-
-    .review-rating .fa-star {
-        color: #D4AF37;
-        font-size: 12px;
-    }
-
-    .rating-label {
-        font-weight: 600;
-        color: #5D4037;
-        font-size: 12px;
-    }
-
-    .review-title {
-        color: #5D4037;
-        margin: 10px 0;
-    }
-
-    .review-comment {
-        color: #666;
-        line-height: 1.6;
-        margin: 0;
-    }
-
-    .review-date {
-        color: #999;
-        margin-top: 10px;
-    }
-
-    .no-reviews {
-        text-align: center;
-        color: #999;
-        padding: 20px;
-    }
-
     /* Related Products */
     .related-products {
         background: white;
@@ -657,21 +822,24 @@
         margin-bottom: 10px;
     }
 
-    .related-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
+    .related-image .product-image-hover-container {
+        margin-bottom: 0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
 
     .related-card h4 {
         color: #5D4037;
         margin: 10px 0;
+        font-size: 14px;
+        height: 40px;
+        overflow: hidden;
     }
 
     .related-price {
         color: #D4AF37;
         font-weight: 700;
         margin-bottom: 10px;
+        font-size: 14px;
     }
 
     .btn-view-related {
@@ -696,6 +864,10 @@
             gap: 30px;
         }
 
+        .product-image-hover-container {
+            height: 300px;
+        }
+
         .product-title {
             font-size: 24px;
         }
@@ -707,15 +879,67 @@
         .related-grid {
             grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
         }
+
+        .related-image .product-image-hover-container {
+            height: 120px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .product-image-hover-container {
+            height: 250px;
+        }
+        
+        .hover-indicator {
+            font-size: 10px;
+            padding: 4px 8px;
+        }
     }
 </style>
 
 <script>
-    function changeImage(thumb) {
+    function changeMainImage(thumb) {
+        const mainImg = document.getElementById('mainProductImage');
+        mainImg.src = thumb.dataset.full;
+        
+        // Mettre à jour la classe active
         document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
         thumb.classList.add('active');
-        document.getElementById('mainImage').src = thumb.src;
+        
+        // Si on clique sur l'image verso, on l'affiche directement
+        if (thumb.dataset.type === 'back') {
+            const productImageHover = document.querySelector('.product-image-hover');
+            if (productImageHover) {
+                const frontImg = productImageHover.querySelector('.front-image');
+                const backImg = productImageHover.querySelector('.back-image');
+                if (frontImg && backImg) {
+                    frontImg.style.opacity = '0';
+                    frontImg.style.transform = 'translateY(-20px)';
+                    backImg.style.opacity = '1';
+                    backImg.style.transform = 'translateY(0)';
+                }
+            }
+        }
     }
+
+    // Réinitialiser l'effet hover quand on clique ailleurs
+    document.querySelectorAll('.thumbnail').forEach(thumb => {
+        thumb.addEventListener('click', function() {
+            if (this.dataset.type !== 'back') {
+                const productImageHover = document.querySelector('.product-image-hover');
+                if (productImageHover) {
+                    const frontImg = productImageHover.querySelector('.front-image');
+                    const backImg = productImageHover.querySelector('.back-image');
+                    if (frontImg && backImg) {
+                        frontImg.style.opacity = '1';
+                        frontImg.style.transform = 'translateY(0)';
+                        backImg.style.opacity = '0';
+                        backImg.style.transform = 'translateY(20px)';
+                    }
+                }
+            }
+        });
+    });
 
     document.getElementById('increaseQty').addEventListener('click', function() {
         let qty = parseInt(document.getElementById('quantity').value);
@@ -744,5 +968,47 @@
         this.querySelector('i').classList.toggle('fas');
         this.querySelector('i').classList.toggle('far');
     });
+
+    // Touche sur mobile pour voir le verso (tap and hold)
+    let touchTimer;
+    const productImageHover = document.querySelector('.product-image-hover.has-back-image');
+    if (productImageHover) {
+        productImageHover.addEventListener('touchstart', function(e) {
+            touchTimer = setTimeout(() => {
+                const frontImg = this.querySelector('.front-image');
+                const backImg = this.querySelector('.back-image');
+                if (frontImg && backImg) {
+                    frontImg.style.opacity = '0';
+                    frontImg.style.transform = 'translateY(-20px)';
+                    backImg.style.opacity = '1';
+                    backImg.style.transform = 'translateY(0)';
+                }
+                e.preventDefault();
+            }, 500);
+        });
+
+        productImageHover.addEventListener('touchend', function() {
+            clearTimeout(touchTimer);
+        });
+
+        productImageHover.addEventListener('touchmove', function() {
+            clearTimeout(touchTimer);
+        });
+
+        // Retour à l'image recto quand on clique/tap
+        productImageHover.addEventListener('click', function(e) {
+            const frontImg = this.querySelector('.front-image');
+            const backImg = this.querySelector('.back-image');
+            if (frontImg && backImg) {
+                if (backImg.style.opacity === '1') {
+                    frontImg.style.opacity = '1';
+                    frontImg.style.transform = 'translateY(0)';
+                    backImg.style.opacity = '0';
+                    backImg.style.transform = 'translateY(20px)';
+                }
+            }
+        });
+    }
 </script>
+
 {% endblock %}

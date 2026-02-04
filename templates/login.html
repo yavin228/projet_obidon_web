@@ -1,184 +1,160 @@
+{% extends "base_auth.html" %}
 {% load static %}
-{% load socialaccount %}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connexion - Obidon</title>
-    <link rel="stylesheet" href="{% static 'css/login.css' %}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-</head>
-<body>
-    <!-- Top Banner -->
-    <div class="top-banner">
-        <p>10% OFF YOUR FIRST ORDER, SUBSCRIBE TO OUR NEWSLETTER</p>
-    </div>
 
-    <!-- Navbar -->
-    <nav class="navbar">
-        <div class="navbar-left">
-            <a href="/" class="logo">OBIDON</a>
-        </div>
-        <div class="navbar-right">
-            <select class="country-select">
-                <option value="XOF">🇹🇬 Togo (FCFA)</option>
-                <option value="EUR">🇫🇷 France (EUR €)</option>
-            </select>
-            <a href="#" class="nav-icon"><i class="fas fa-search"></i></a>
-            <a href="{% url 'account' %}" class="nav-icon"><i class="fas fa-user"></i></a>
-            <a href="#" class="nav-icon wishlist"><i class="fas fa-heart"></i></a>
-            <a href="{% url 'cart' %}" class="nav-icon cart"><i class="fas fa-shopping-cart"></i></a>
-        </div>
-    </nav>
+{% block title %}Connexion - Obidon{% endblock %}
 
-    <div class="login-wrapper">
-        <div class="login-container">
-            <h2 class="login-title">LOGIN</h2>
-            <p class="login-subtitle">Welcome back! Sign in to your account</p>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
+
+{% block content %}
+<div class="login-wrapper">
+    <div class="login-container">
+        
+        <!-- Section Formulaire -->
+        <div class="login-form-wrapper">
+            <div class="form-title">Bienvenue chez Obidon</div>
+            <p class="form-subtitle">Connectez-vous pour continuer</p>
+
+            <!-- Messages d'alerte -->
             {% if messages %}
-                <div class="messages">
-                    {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }}">
-                            <i class="fas fa-{% if message.tags == 'error' %}exclamation-circle{% else %}check-circle{% endif %}"></i>
-                            {{ message }}
-                        </div>
-                    {% endfor %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
                 </div>
+                {% endfor %}
+            </div>
             {% endif %}
 
-            <form method="post" class="login-form">
+            <!-- Formulaire de connexion -->
+            <form method="post" action="{% url 'account_login' %}" class="login-form">
                 {% csrf_token %}
-                <!-- Next parameter to redirect to profile after login -->
-                <input type="hidden" name="next" value="{% url 'account' %}">
-                
-                <div class="form-group">
-                    <input type="email" id="email" name="email" required placeholder="E-mail" class="form-input">
-                </div>
 
+                <!-- Champ Email -->
                 <div class="form-group">
-                    <div class="password-wrapper">
-                        <input type="password" id="password" name="password" required placeholder="Password" class="form-input">
-                        <a href="#" class="forgot-password" onclick="togglePasswordVisibility(event)">
-                            <i class="fas fa-eye"></i>
-                        </a>
-                    </div>
-                </div>
-
-                <div class="remember-forgot">
-                    <label class="remember-me">
-                        <input type="checkbox" name="remember"> Remember me
+                    <label for="email" class="form-label">
+                        <i class="fas fa-envelope"></i>
+                        Adresse Email
                     </label>
-                    <a href="#" class="forgot-link">Forgot password?</a>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="login" 
+                        class="form-input" 
+                        placeholder="votre@email.com"
+                        required
+                        autocomplete="email"
+                    >
                 </div>
 
-                <button type="submit" class="btn-login">LOGIN</button>
-            </form>
-
-            {% if google_app %}
-            <div class="divider">
-                <span>Or</span>
-            </div>
-
-            <!-- Social Login -->
-            <div class="social-login">
-                <a href="{% provider_login_url 'google' %}" class="social-btn google">
-                    <i class="fab fa-google"></i> Sign in with Google
-                </a>
-            </div>
-            {% endif %}
-
-            <!-- Info Cards -->
-            <div class="login-info-section">
-                <div class="info-card">
-                    <div class="info-icon">
-                        <i class="fas fa-truck"></i>
-                    </div>
-                    <h5>Fast Delivery</h5>
-                    <p>Enjoy quick and secure delivery</p>
-                </div>
-
-                <div class="info-card">
-                    <div class="info-icon">
+                <!-- Champ Mot de passe -->
+                <div class="form-group">
+                    <label for="password" class="form-label">
                         <i class="fas fa-lock"></i>
+                        Mot de passe
+                    </label>
+                    <div class="password-field">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            class="form-input" 
+                            placeholder="••••••••"
+                            required
+                            autocomplete="current-password"
+                        >
+                        <button type="button" class="toggle-password" id="togglePassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
                     </div>
-                    <h5>Secure Payment</h5>
-                    <p>Your transactions are safe</p>
                 </div>
 
-                <div class="info-card">
-                    <div class="info-icon">
-                        <i class="fas fa-undo"></i>
-                    </div>
-                    <h5>Free Returns</h5>
-                    <p>30 days to return items</p>
+                <!-- Options -->
+                <div class="form-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="remember" id="remember">
+                        Se souvenir de moi
+                    </label>
+                    <a href="{% url 'account_reset_password' %}" class="forgot-password">
+                        Mot de passe oublié ?
+                    </a>
                 </div>
+
+                <!-- Bouton de connexion -->
+                <button type="submit" class="btn-login">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Se connecter
+                </button>
+
+                <!-- Lien vers inscription -->
+                <div class="signup-section">
+                    <p>Vous n'avez pas de compte ? 
+                        <a href="{% url 'account_signup' %}" class="signup-link">Créer un compte</a>
+                    </p>
+                </div>
+
+                <!-- Divider -->
+                <div class="divider">
+                    <span>OU</span>
+                </div>
+
+                <!-- Connexion sociale -->
+                <div class="social-login">
+                    <button type="button" class="social-btn google">
+                        <i class="fab fa-google"></i>
+                        Google
+                    </button>
+                    <button type="button" class="social-btn facebook">
+                        <i class="fab fa-facebook-f"></i>
+                        Facebook
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Section Logo et Titre -->
+        <div class="login-logo-section">
+            <img src="{% static 'images/logo.jpeg' %}" alt="Obidon Logo" class="login-logo">
+            <h1 class="login-title">Chez nous</h1>
+            <p class="login-tagline">« Chaque matin commence par un moment d’excellence, quand le goût rencontre l’exigence. »</p>
+        </div>
+
+        <!-- Section Informations -->
+        <div class="login-info-section">
+            <div class="info-card">
+                <div class="info-icon">
+                    <i class="fas fa-coffee"></i>
+                </div>
+                <h3>Café Premium</h3>
+                <p>Les meilleurs grains sélectionnés pour vous</p>
             </div>
-
-            <p class="signup-text">Don't have an account? <a href="{% url 'signup' %}" class="signup-link">Sign up</a></p>
+            <div class="info-card">
+                <div class="info-icon">
+                    <i class="fas fa-bread-slice"></i>
+                </div>
+                <h3>Pain Artisanal</h3>
+                <p>Fraîchement préparé chaque jour</p>
+            </div>
+            <div class="info-card">
+                <div class="info-icon">
+                    <i class="fas fa-shipping-fast"></i>
+                </div>
+                <h3>Livraison Rapide</h3>
+                <p>Chez vous en 24-48h</p>
+            </div>
         </div>
     </div>
+</div>
 
-    <style>
-        .remember-forgot {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            font-size: 13px;
-        }
-
-        .remember-me {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            color: #666;
-        }
-
-        .remember-me input {
-            cursor: pointer;
-        }
-
-        .forgot-link {
-            color: #D4AF37;
-            text-decoration: none;
-            font-weight: 600;
-            transition: color 0.3s;
-        }
-
-        .forgot-link:hover {
-            color: #C4A027;
-        }
-
-        .social-btn.google {
-            background: white;
-            color: #4285F4;
-            border: 2px solid #4285F4;
-        }
-
-        .social-btn.google:hover {
-            background: #f8f9fa;
-        }
-    </style>
-
-    <script>
-        function togglePasswordVisibility(e) {
-            e.preventDefault();
-            const input = document.getElementById('password');
-            const icon = e.target.closest('a').querySelector('i');
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            } else {
-                input.type = 'password';
-                icon.classList.add('fa-eye');
-                icon.classList.remove('fa-eye-slash');
-            }
-        }
-    </script>
-</body>
-</html>
+<!-- Footer -->
+<footer class="login-footer">
+    <div class="footer-content">
+        <p>&copy; 2025 Obidon. Tous droits réservés.</p>
+        <div class="footer-links">
+            <a href="#">Conditions d'utilisation</a>
+            <a href="#">Politique de confidentialité</a>
+            <a href="#">Aide</a>
+        </div>
+    </div>
+</footer>
+{% endblock %}
