@@ -477,6 +477,60 @@ body {
     padding: 10px;
 }
 
+.navbar-currency {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+}
+
+.navbar-currency form {
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+/* style du select monnaie dans la navbar (thème marron/doré) */
+.navbar-currency select,
+.navbar-currency .country-select {
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.08);
+    color: var(--white);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s ease, transform 0.12s ease;
+    font-size: 0.95rem;
+    min-height: 44px;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+/* hover / micro animation */
+.navbar-currency select:hover,
+.navbar-currency .country-select:hover {
+    background: rgba(255,255,255,0.16);
+    transform: translateY(-2px);
+}
+
+/* options affichées claires pour lisibilité */
+.navbar-currency select option,
+.navbar-currency .country-select option {
+    background: var(--white);
+    color: var(--dark-brown);
+}
+
+/* responsive */
+@media (max-width: 768px) {
+    .navbar-currency select,
+    .navbar-currency .country-select {
+        padding: 8px 10px;
+        font-size: 0.85rem;
+        min-height: 40px;
+    }
+}
+
 /* MENU CATÉGORIES */
 .categories-menu {
     background: var(--white);
@@ -622,4 +676,24 @@ body {
     .address-detail, .user-name {
         display: none;
     }
+}
+
+.currency-select {
+    background: white;
+    border: 1px solid #DDD;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.currency-select:hover {
+    border-color: #D4AF37;
+}
+
+.currency-select:focus {
+    outline: none;
+    border-color: #D4AF37;
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
 }

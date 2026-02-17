@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load currency_tags %}
 
 {% block title %}Obidon - Accueil{% endblock %}
 
@@ -112,7 +113,7 @@
     <section class="hero-grid-section">
         <!-- Café en dosettes -->
         <div class="hero-card">
-            <a href="{% url 'products' %}?category=cafe" class="hero-card-link">
+            <a href="{% url 'core:products' %}?category=cafe" class="hero-card-link">
                 <div class="hero-card-image">
                     <img src="{% static 'images/coffe_dosettes.jpeg' %}" alt="Cafés dosettes"> 
                 </div>
@@ -126,7 +127,7 @@
 
         <!-- Café en capsules -->
         <div class="hero-card">
-            <a href="{% url 'products' %}?category=cafe" class="hero-card-link">
+            <a href="{% url 'core:products' %}?category=cafe" class="hero-card-link">
                 <div class="hero-card-image">
                     <img src="{% static 'images/coffe_capsule.jpeg' %}" alt="Cafés en capsules">
                 </div>
@@ -140,7 +141,7 @@
 
         <!-- Café en grains -->
         <div class="hero-card">
-            <a href="{% url 'products' %}?category=cafe" class="hero-card-link">
+            <a href="{% url 'core:products' %}?category=cafe" class="hero-card-link">
                 <div class="hero-card-image">
                     <img src="{% static 'images/coffe_grain.jpeg' %}" alt="Cafe en grains"> 
                 </div>
@@ -156,7 +157,7 @@
     <section class="hero-grid-section">
         <!-- Café Premium -->
         <div class="hero-card">
-            <a href="{% url 'products' %}?category=cafe" class="hero-card-link">
+            <a href="{% url 'core:products' %}?category=cafe" class="hero-card-link">
                 <div class="hero-card-image">
                     <img src="{% static 'images/coffe_moulus.jpeg' %}" alt="Cafés Moulus">
                 </div>
@@ -170,7 +171,7 @@
 
         <!-- Café américain -->
         <div class="hero-card">
-            <a href="{% url 'products' %}?category=cafe" class="hero-card-link">
+            <a href="{% url 'core:products' %}?category=cafe" class="hero-card-link">
                 <div class="hero-card-image">
                     <img src="{% static 'images/coffe_american.jpg' %}" alt="Cafés Americains">
                 </div>
@@ -184,7 +185,7 @@
 
         <!-- Placeholder pour future catégorie -->
         <div class="hero-card">
-            <a href="{% url 'products' %}?category=cafe" class="hero-card-link">
+            <a href="{% url 'core:products' %}?category=cafe" class="hero-card-link">
                 <div class="hero-card-image">
                     <img src="{% static 'images/coffe_dosettes.jpeg' %}" alt="Autres cafés">
                 </div>
@@ -203,7 +204,7 @@
     <section class="hero-grid-section">
         <!-- Pain Baguette -->
         <div class="hero-card">
-            <a href="{% url 'products' %}?category=pains" class="hero-card-link">
+            <a href="{% url 'core:products' %}?category=pains" class="hero-card-link">
                 <div class="hero-card-image">
                     <img src="{% static 'images/pain_baguette.jpeg' %}" alt="Pain Baguette">
                 </div>
@@ -217,7 +218,7 @@
 
         <!-- Gros Pain -->
         <div class="hero-card">
-            <a href="{% url 'products' %}?category=pains" class="hero-card-link">
+            <a href="{% url 'core:products' %}?category=pains" class="hero-card-link">
                 <div class="hero-card-image">
                     <img src="{% static 'images/gros_pain.jpg' %}" alt="Gros pain">
                 </div>
@@ -231,7 +232,7 @@
 
         <!-- Pain Court -->
         <div class="hero-card">
-            <a href="{% url 'products' %}?category=pains" class="hero-card-link">
+            <a href="{% url 'core:products' %}?category=pains" class="hero-card-link">
                 <div class="hero-card-image">
                     <img src="{% static 'images/pain_court.jpeg' %}" alt="Pain court">
                 </div>
@@ -247,7 +248,7 @@
     <section class="hero-grid-section">
         <!-- Petit pain -->
         <div class="hero-card">
-            <a href="{% url 'products' %}?category=pains" class="hero-card-link">
+            <a href="{% url 'core:products' %}?category=pains" class="hero-card-link">
                 <div class="hero-card-image">
                     <img src="{% static 'images/petit_pain.jpeg' %}" alt="Petit pain">
                 </div>
@@ -261,7 +262,7 @@
 
         <!-- Pain Artisanal Premium 1 -->
         <div class="hero-card">
-            <a href="{% url 'products' %}?category=pains" class="hero-card-link">
+            <a href="{% url 'core:products' %}?category=pains" class="hero-card-link">
                 <div class="hero-card-image">
                     <img src="{% static 'images/pain_image2.jpg' %}" alt="Pain Artisanal Premium">
                 </div>
@@ -275,7 +276,7 @@
 
         <!-- Pain Artisanal Premium 2 -->
         <div class="hero-card">
-            <a href="{% url 'products' %}?category=pains" class="hero-card-link">
+            <a href="{% url 'core:products' %}?category=pains" class="hero-card-link">
                 <div class="hero-card-image">
                     <img src="{% static 'images/pain_imge1.jpg' %}" alt="Pain Artisanal Premium">
                 </div>
@@ -294,7 +295,7 @@
     <section class="hero-grid-section">
         <!-- Machine à Capsules -->
         <div class="hero-card">
-            <a href="{% url 'products' %}?category=machines_cafe" class="hero-card-link">
+            <a href="{% url 'core:products' %}?category=machines_cafe" class="hero-card-link">
                 <div class="hero-card-image">
                     <img src="{% static 'images/machine_capsule.jpg' %}" alt="Machine à Capsules">
                 </div>
@@ -308,7 +309,7 @@
 
         <!-- Machine Expresso Moulus & Dosettes -->
         <div class="hero-card">
-            <a href="{% url 'products' %}?category=machines_cafe" class="hero-card-link">
+            <a href="{% url 'core:products' %}?category=machines_cafe" class="hero-card-link">
                 <div class="hero-card-image">
                     <img src="{% static 'images/machine_expresso_moulu.jpg' %}" alt="Machine Expresso Héager Premium">
                 </div>
@@ -322,7 +323,7 @@
 
         <!-- Machine à café haeger -->
         <div class="hero-card">
-            <a href="{% url 'products' %}?category=machines_cafe" class="hero-card-link">
+            <a href="{% url 'core:products' %}?category=machines_cafe" class="hero-card-link">
                 <div class="hero-card-image">
                     <img src="{% static 'images/machine_cafe_heager.jpg' %}" alt="Machine à café haeger">
                 </div>
@@ -360,8 +361,9 @@
                                 </div>
                             {% endif %}
 
-                            {% if product.discount_percent %}
-                                <span class="discount-badge">-{{ product.discount_percent }}%</span>
+                            <!-- Utiliser discount_percentage_fcfa au lieu de discount_percent -->
+                            {% if product.discount_price_fcfa %}
+                                <span class="discount-badge">-{{ product.discount_percentage }}%</span>
                             {% endif %}
                         </div>
                     </div>
@@ -379,14 +381,15 @@
                             <span>{{ product.rating }}/5</span>
                         </div>
                         <div class="price">
-                            {% if product.discount_percent %}
-                                <span class="original">{{ product.price }}€</span>
-                                <span class="sale">{{ product.sale_price }}€</span>
+                            <!-- Afficher les prix en FCFA -->
+                            {% if product.discount_price_fcfa %}
+                                <span class="original">{{ product.price_fcfa|fcfa }}</span>
+                                <span class="sale">{{ product.discount_price_fcfa|fcfa }}</span>
                             {% else %}
-                                <span>{{ product.price }}€</span>
+                                <span>{{ product.price_fcfa|fcfa }}</span>
                             {% endif %}
                         </div>
-                        <a href="{% url 'product_detail' product.id %}" class="btn-view">Voir détail</a>
+                        <a href="{% url 'core:product_detail' product.id %}" class="btn-view">Voir détail</a>
                     </div>
                 </div>
             {% endfor %}
@@ -410,7 +413,7 @@
                     <i class="fas fa-truck"></i>
                 </div>
                 <h3>Livraison Rapide</h3>
-                <p>Commandes livrées en 24-48h. Livraison gratuite dès 50€.</p>
+                <p>Commandes livrées en 24-48h. Livraison gratuite dès 500 fcfa .</p>
             </div>
 
             <div class="benefit-card">

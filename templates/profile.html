@@ -1,4 +1,5 @@
 {% load static %}
+{% load currency_tags %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -23,7 +24,7 @@
         </div>
 
         <div class="navbar-center">
-            <form class="search-form" method="get" action="{% url 'products' %}">
+            <form class="search-form" method="get" action="{% url 'core:products' %}">
                 <input type="text" name="q" placeholder="Search for coffee, bread..." class="search-input">
                 <select class="search-category" name="type">
                     <option value="">All types</option>
@@ -37,19 +38,24 @@
         </div>
 
         <div class="navbar-right">
-            <select class="country-select">
-                <option value="XOF">🇹🇬 Togo (FCFA)</option>
-                <option value="USD">🇺🇸 USA (USD $)</option>
-                <option value="EUR">🇪🇺 Europe (EUR €)</option>
-            </select>
+            <div class="navbar-currency">
+                <form id="currency-form" method="post" action="{% url 'core:update_currency' %}">
+                    {% csrf_token %}
+                    <select name="currency" class="country-select" onchange="this.form.submit()">
+                        <option value="XOF" {% if user_currency == 'XOF' %}selected{% endif %}>🇹🇬 XOF (FCFA)</option>
+                        <option value="USD" {% if user_currency == 'USD' %}selected{% endif %}>🇺🇸 USD ($)</option>
+                        <option value="EUR" {% if user_currency == 'EUR' %}selected{% endif %}>🇪🇺 EUR (€)</option>
+                    </select>
+                </form>
+            </div>
             {% if user.is_authenticated %}
-                <a href="{% url 'account' %}" class="nav-icon active"><i class="fas fa-user"></i></a>
+                <a href="{% url 'core:account' %}" class="nav-icon active"><i class="fas fa-user"></i></a>
                 <a href="#" class="nav-icon wishlist"><i class="fas fa-heart"></i></a>
-                <a href="{% url 'cart' %}" class="nav-icon cart"><i class="fas fa-shopping-cart"></i></a>
+                <a href="{% url 'core:cart' %}" class="nav-icon cart"><i class="fas fa-shopping-cart"></i></a>
             {% else %}
-                <a href="{% url 'login' %}" class="nav-icon"><i class="fas fa-user"></i></a>
+                <a href="{% url 'core:login' %}" class="nav-icon"><i class="fas fa-user"></i></a>
                 <a href="#" class="nav-icon wishlist"><i class="fas fa-heart"></i></a>
-                <a href="{% url 'cart' %}" class="nav-icon cart"><i class="fas fa-shopping-cart"></i></a>
+                <a href="{% url 'core:cart' %}" class="nav-icon cart"><i class="fas fa-shopping-cart"></i></a>
             {% endif %}
         </div>
     </nav>
@@ -57,11 +63,11 @@
     <!-- Secondary Navigation -->
     <div class="secondary-nav">
         <div class="nav-container">
-            <a href="{% url 'products' %}" class="nav-link">All Products</a>
-            <a href="{% url 'product_type' 'cafe' %}" class="nav-link">Coffees</a>
-            <a href="{% url 'product_type' 'pain' %}" class="nav-link">Breads</a>
-            <a href="{% url 'product_type' 'machine' %}" class="nav-link">Coffee Machines</a>
-            <a href="{% url 'product_type' 'accessoire' %}" class="nav-link">Accessories</a>
+            <a href="{% url 'core:products' %}" class="nav-link">All Products</a>
+            <a href="{% url 'core:product_type' 'cafe' %}" class="nav-link">Coffees</a>
+            <a href="{% url 'core:product_type' 'pain' %}" class="nav-link">Breads</a>
+            <a href="{% url 'core:product_type' 'machine' %}" class="nav-link">Coffee Machines</a>
+            <a href="{% url 'core:product_type' 'accessoire' %}" class="nav-link">Accessories</a>
         </div>
     </div>
 
@@ -77,6 +83,10 @@
                 <div class="profile-details">
                     <h1>Hello, {{ user.first_name|default:user.username }}! 👋</h1>
                     <p class="profile-email">@{{ user.username }}</p>
+                    <p class="profile-currency">
+                        <i class="fas fa-globe"></i> Current currency: 
+                        <strong>{{ user_currency }} ({{ CURRENCY_SYMBOL }})</strong>
+                    </p>
                     {% if messages %}
                         <div class="messages">
                             {% for message in messages %}
@@ -122,17 +132,17 @@
                         </div>
                         <div class="stat-info">
                             <h4>Total Orders</h4>
-                            <p class="stat-value">12</p>
+                            <p class="stat-value">{{ orders_count|default:"0" }}</p>
                         </div>
                     </div>
 
                     <div class="stat-card">
                         <div class="stat-icon" style="background: #E8F5E9; color: #4CAF50;">
-                            <i class="fas fa-euro-sign"></i>
+                            <i class="fas fa-money-bill-wave"></i>
                         </div>
                         <div class="stat-info">
                             <h4>Total Spent</h4>
-                            <p class="stat-value">€485.50</p>
+                            <p class="stat-value">{{ total_spent_formatted|default:"0 FCFA" }}</p>
                         </div>
                     </div>
 
@@ -142,7 +152,7 @@
                         </div>
                         <div class="stat-info">
                             <h4>Wishlist Items</h4>
-                            <p class="stat-value">7</p>
+                            <p class="stat-value">{{ wishlist_count|default:"0" }}</p>
                         </div>
                     </div>
 
@@ -152,7 +162,7 @@
                         </div>
                         <div class="stat-info">
                             <h4>Loyalty Points</h4>
-                            <p class="stat-value">485 pts</p>
+                            <p class="stat-value">{{ loyalty_points|default:"0" }} pts</p>
                         </div>
                     </div>
                 </div>
@@ -161,43 +171,45 @@
                 <div class="recent-section">
                     <div class="section-header">
                         <h3>Recent Orders</h3>
-                        <a href="#orders" class="view-all">View all</a>
+                        {% if recent_orders %}
+                            <a href="#orders" class="view-all view-orders-link">View all</a>
+                        {% endif %}
                     </div>
                     <div class="orders-table">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Order ID</th>
-                                    <th>Date</th>
-                                    <th>Amount</th>
-                                    <th>Status</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>#ORD-001234</td>
-                                    <td>Jan 18, 2026</td>
-                                    <td>€45.99</td>
-                                    <td><span class="status-badge delivered">Delivered</span></td>
-                                    <td><a href="#" class="action-link">View</a></td>
-                                </tr>
-                                <tr>
-                                    <td>#ORD-001233</td>
-                                    <td>Jan 15, 2026</td>
-                                    <td>€62.50</td>
-                                    <td><span class="status-badge shipped">Shipped</span></td>
-                                    <td><a href="#" class="action-link">View</a></td>
-                                </tr>
-                                <tr>
-                                    <td>#ORD-001232</td>
-                                    <td>Jan 10, 2026</td>
-                                    <td>€38.00</td>
-                                    <td><span class="status-badge delivered">Delivered</span></td>
-                                    <td><a href="#" class="action-link">View</a></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        {% if recent_orders %}
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>Date</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for recent in recent_orders %}
+                                    <tr>
+                                        <td>#{{ recent.order.id }}</td>
+                                        <td>{{ recent.order.created_at|date:"M d, Y" }}</td>
+                                        <td>{{ recent.formatted_amount }}</td>
+                                        <td>
+                                            <span class="status-badge {{ recent.order.status }}">
+                                                {{ recent.status_display }}
+                                            </span>
+                                        </td>
+                                        <td><a href="#" class="action-link">View</a></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <div class="no-orders">
+                                <i class="fas fa-shopping-bag fa-2x" style="color: #ddd;"></i>
+                                <p>You haven't placed any orders yet.</p>
+                                <a href="{% url 'core:products' %}" class="btn-small">Start Shopping</a>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -209,53 +221,54 @@
                         <h3>My Orders</h3>
                     </div>
                     <div class="orders-list">
-                        <div class="order-card">
-                            <div class="order-header">
-                                <div class="order-info">
-                                    <h4>#ORD-001234</h4>
-                                    <p>January 18, 2026</p>
-                                </div>
-                                <div class="order-amount">€45.99</div>
-                            </div>
-                            <div class="order-body">
-                                <div class="order-items">
-                                    <div class="order-item">
-                                        <span>Premium Espresso Beans (250g)</span>
-                                        <span>x2</span>
+                        {% if recent_orders %}
+                            {% for recent in recent_orders %}
+                            <div class="order-card">
+                                <div class="order-header">
+                                    <div class="order-info">
+                                        <h4>#{{ recent.order.id }}</h4>
+                                        <p>{{ recent.order.created_at|date:"F j, Y" }}</p>
                                     </div>
-                                    <div class="order-item">
-                                        <span>Artisan Sourdough Bread</span>
-                                        <span>x1</span>
-                                    </div>
+                                    <div class="order-amount">{{ recent.formatted_amount }}</div>
                                 </div>
-                            </div>
-                            <div class="order-footer">
-                                <span class="status-badge delivered">Delivered</span>
-                                <a href="#" class="btn-small">View Details</a>
-                            </div>
-                        </div>
-
-                        <div class="order-card">
-                            <div class="order-header">
-                                <div class="order-info">
-                                    <h4>#ORD-001233</h4>
-                                    <p>January 15, 2026</p>
-                                </div>
-                                <div class="order-amount">€62.50</div>
-                            </div>
-                            <div class="order-body">
-                                <div class="order-items">
-                                    <div class="order-item">
-                                        <span>Coffee Machine Deluxe</span>
-                                        <span>x1</span>
+                                <div class="order-body">
+                                    <div class="order-items">
+                                        {% for item in recent.items.all %}
+                                        <div class="order-item">
+                                            <span>{{ item.product.name }}</span>
+                                            <span>x{{ item.quantity }}</span>
+                                        </div>
+                                        {% empty %}
+                                        <div class="order-item">
+                                            <span>No items found</span>
+                                        </div>
+                                        {% endfor %}
                                     </div>
                                 </div>
+                                <div class="order-footer">
+                                    <span class="status-badge {{ recent.order.status }}">
+                                        {{ recent.status_display }}
+                                    </span>
+                                    <a href="#" class="btn-small">
+                                        {% if recent.order.status == 'shipped' %}
+                                            Track Order
+                                        {% else %}
+                                            View Details
+                                        {% endif %}
+                                    </a>
+                                </div>
                             </div>
-                            <div class="order-footer">
-                                <span class="status-badge shipped">Shipped</span>
-                                <a href="#" class="btn-small">Track Order</a>
+                            {% endfor %}
+                        {% else %}
+                            <div class="no-orders">
+                                <i class="fas fa-box-open fa-3x" style="color: #ddd;"></i>
+                                <h4>No orders yet</h4>
+                                <p>Your order history will appear here once you make a purchase.</p>
+                                <a href="{% url 'core:products' %}" class="btn-small" style="margin-top: 15px;">
+                                    <i class="fas fa-shopping-cart"></i> Browse Products
+                                </a>
                             </div>
-                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -272,8 +285,8 @@
                     <div class="addresses-grid">
                         <div class="address-card default">
                             <div class="address-badge">Default</div>
-                            <h4>{{ user.first_name }} {{ user.last_name }}</h4>
-                            <p>{{ user.email }}</p>
+                            <h4>{{ user.first_name|default:"User" }} {{ user.last_name }}</h4>
+                            <p>{{ user.email|default:"No email" }}</p>
                             <p>123 Main Street</p>
                             <p>Vienna, Austria 1010</p>
                             <div class="address-actions">
@@ -288,7 +301,7 @@
 
                         <div class="address-card">
                             <h4>Work Address</h4>
-                            <p>{{ user.first_name }} {{ user.last_name }}</p>
+                            <p>{{ user.first_name|default:"User" }} {{ user.last_name }}</p>
                             <p>456 Business Ave</p>
                             <p>Vienna, Austria 1020</p>
                             <div class="address-actions">
@@ -313,7 +326,8 @@
 
                     <div class="settings-group">
                         <h4>Personal Information</h4>
-                        <form class="form-settings">
+                        <form class="form-settings" method="post" action="#">
+                            {% csrf_token %}
                             <div class="form-row">
                                 <div class="form-group">
                                     <label>First Name</label>
@@ -330,6 +344,24 @@
                             </div>
                             <button type="submit" class="btn-save">Save Changes</button>
                         </form>
+                    </div>
+
+                    <div class="settings-group">
+                        <h4>Currency Preferences</h4>
+                        <div class="currency-settings">
+                            <p>Current currency: <strong>{{ user_currency }} ({{ CURRENCY_SYMBOL }})</strong></p>
+                            <form method="post" action="{% url 'core:update_currency' %}" class="currency-form-small">
+                                {% csrf_token %}
+                                <select name="currency" class="country-select" style="width: 200px; margin: 10px 0;">
+                                    <option value="XOF" {% if user_currency == 'XOF' %}selected{% endif %}>🇹🇬 XOF (FCFA)</option>
+                                    <option value="USD" {% if user_currency == 'USD' %}selected{% endif %}>🇺🇸 USD ($)</option>
+                                    <option value="EUR" {% if user_currency == 'EUR' %}selected{% endif %}>🇪🇺 EUR (€)</option>
+                                </select>
+                                <button type="submit" class="btn-small" style="margin-left: 10px;">
+                                    <i class="fas fa-sync-alt"></i> Update Currency
+                                </button>
+                            </form>
+                        </div>
                     </div>
 
                     <div class="settings-group">
@@ -465,12 +497,40 @@
             gap: 20px;
         }
 
+        /* currency selector in navbar */
+        .navbar-currency {
+            display: flex;
+            align-items: center;
+            margin-right: 15px;
+        }
+
+        .navbar-currency form { 
+            margin: 0; 
+        }
+
         .country-select {
-            background: transparent;
-            border: none;
-            font-size: 12px;
+            padding: 8px 12px;
+            background: linear-gradient(180deg, #fff 0%, #fbf7f2 100%);
+            color: #5D4037;
+            border: 1px solid #E6D6B8;
+            border-radius: 8px;
+            font-weight: 600;
             cursor: pointer;
-            color: #666;
+            transition: background 0.15s ease, transform 0.12s ease;
+            font-size: 13px;
+            min-height: 40px;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .country-select:hover {
+            background: #fff;
+            transform: translateY(-2px);
+        }
+
+        .country-select option {
+            color: #333;
+            background: #fff;
         }
 
         .nav-icon {
@@ -567,12 +627,41 @@
         .profile-email {
             color: #999;
             font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .profile-currency {
+            color: #666;
+            font-size: 13px;
             margin-bottom: 15px;
         }
 
+        .profile-currency i {
+            color: #D4AF37;
+            margin-right: 5px;
+        }
+
         .messages {
+            margin-top: 10px;
+        }
+
+        .alert {
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+
+        .alert-success {
+            background: #E8F5E9;
             color: #4CAF50;
-            font-size: 12px;
+            border: 1px solid #C8E6C9;
+        }
+
+        .alert-error, .alert-danger {
+            background: #FFEBEE;
+            color: #f44336;
+            border: 1px solid #FFCDD2;
         }
 
         .profile-actions {
@@ -721,6 +810,32 @@
             font-size: 12px;
         }
 
+        /* No Orders Styling */
+        .no-orders {
+            text-align: center;
+            padding: 40px 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border: 1px dashed #ddd;
+        }
+
+        .no-orders i {
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .no-orders h4 {
+            color: #5D4037;
+            margin-bottom: 10px;
+        }
+
+        .no-orders p {
+            color: #999;
+            font-size: 14px;
+            max-width: 400px;
+            margin: 0 auto 20px;
+        }
+
         /* Orders Table */
         .orders-table table {
             width: 100%;
@@ -753,14 +868,29 @@
             text-transform: uppercase;
         }
 
+        .status-badge.pending {
+            background: #FFF3E0;
+            color: #FF9800;
+        }
+
+        .status-badge.processing {
+            background: #E3F2FD;
+            color: #2196F3;
+        }
+
+        .status-badge.shipped {
+            background: #E8F5E9;
+            color: #4CAF50;
+        }
+
         .status-badge.delivered {
             background: #E8F5E9;
             color: #4CAF50;
         }
 
-        .status-badge.shipped {
-            background: #E3F2FD;
-            color: #2196F3;
+        .status-badge.cancelled {
+            background: #FFEBEE;
+            color: #f44336;
         }
 
         .action-link {
@@ -846,6 +976,9 @@
             cursor: pointer;
             transition: all 0.3s;
             text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
         }
 
         .btn-small:hover {
@@ -947,6 +1080,23 @@
             padding: 20px;
             border-radius: 8px;
             background: #FFEBEE;
+        }
+
+        .currency-settings {
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid #eee;
+        }
+
+        .currency-settings p {
+            margin-bottom: 15px;
+            color: #666;
+        }
+
+        .currency-form-small {
+            display: flex;
+            align-items: center;
         }
 
         .form-settings {
@@ -1122,6 +1272,20 @@
             .tab-content {
                 padding: 20px;
             }
+
+            .currency-form-small {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .currency-form-small .country-select {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+
+            .currency-form-small .btn-small {
+                margin-left: 0;
+            }
         }
     </style>
 
@@ -1138,6 +1302,51 @@
                 document.getElementById(tabName).classList.add('active');
             });
         });
+
+        // View all orders link
+        const viewAllLink = document.querySelector('.view-orders-link');
+        if (viewAllLink) {
+            viewAllLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+                
+                document.querySelector('[data-tab="orders"]').classList.add('active');
+                document.getElementById('orders').classList.add('active');
+            });
+        }
+
+        // Currency form handling
+        const currencyForm = document.getElementById('currency-form');
+        if (currencyForm) {
+            const currencySelect = currencyForm.querySelector('select[name="currency"]');
+            
+            currencySelect.addEventListener('change', function() {
+                // Show loading state
+                const originalText = this.options[this.selectedIndex].text;
+                const submitButton = currencyForm.querySelector('button[type="submit"]');
+                
+                if (submitButton) {
+                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+                    submitButton.disabled = true;
+                }
+                
+                // Submit form
+                currencyForm.submit();
+            });
+        }
+
+        // Auto-hide messages after 5 seconds
+        setTimeout(() => {
+            const messages = document.querySelectorAll('.alert');
+            messages.forEach(message => {
+                message.style.transition = 'opacity 0.5s ease';
+                message.style.opacity = '0';
+                setTimeout(() => {
+                    message.style.display = 'none';
+                }, 500);
+            });
+        }, 5000);
     </script>
 </body>
 </html>

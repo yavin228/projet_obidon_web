@@ -1,184 +1,176 @@
-# currency_service.py - Service pour gérer les conversions de devises
-
-import requests
+"""
+Service centralisé pour la gestion des devises et conversions
+COMPATIBLE avec votre code existant
+"""
 from decimal import Decimal
-from django.core.cache import cache
-from django.conf import settings
-from datetime import datetime, timedelta
+from django.utils import timezone
+from .models import Currency, ExchangeRate, UserCurrencyPreference
 
 class CurrencyConverter:
-    """Service de conversion de devises avec API ExchangeRate"""
+    """Service de conversion compatible avec votre code existant"""
     
-    # API gratuite: https://www.exchangerate-api.com/
-    API_URL = "https://api.exchangerate-api.com/v4/latest/"
-    CACHE_TIMEOUT = 3600  # 1 heure
-    
-    # Configuration des devises supportées
+    # Devises supportées
     SUPPORTED_CURRENCIES = {
-        'XOF': {
-            'name': 'Franc CFA',
-            'symbol': 'FCFA',
-            'flag': '🇹🇬',
-            'is_default': True
-        },
-        'USD': {
-            'name': 'Dollar américain',
-            'symbol': '$',
-            'flag': '🇺🇸',
-            'is_default': False
-        },
-        'EUR': {
-            'name': 'Euro',
-            'symbol': '€',
-            'flag': '🇪🇺',
-            'is_default': False
-        }
+        'XOF': {'name': 'Franc CFA', 'symbol': 'FCFA', 'flag': '🇨🇫', 'rate_to_xof': 1},
+        'EUR': {'name': 'Euro', 'symbol': '€', 'flag': '🇪🇺', 'rate_to_xof': 655.957},
+        'USD': {'name': 'Dollar', 'symbol': '$', 'flag': '🇺🇸', 'rate_to_xof': 599.85},
     }
     
-    @classmethod
-    def get_exchange_rates(cls, base_currency='XOF'):
-        """
-        Récupère les taux de change depuis l'API
-        Utilise le cache pour éviter trop de requêtes
-        """
-        cache_key = f'exchange_rates_{base_currency}'
-        rates = cache.get(cache_key)
-        
-        if rates is None:
-            try:
-                # Appel à l'API
-                response = requests.get(
-                    f"{cls.API_URL}{base_currency}",
-                    timeout=10
-                )
-                response.raise_for_status()
-                data = response.json()
-                
-                rates = {
-                    'base': base_currency,
-                    'rates': data.get('rates', {}),
-                    'timestamp': data.get('time_last_updated', datetime.now().isoformat())
-                }
-                
-                # Mise en cache
-                cache.set(cache_key, rates, cls.CACHE_TIMEOUT)
-                
-            except requests.exceptions.RequestException as e:
-                print(f"Erreur lors de la récupération des taux: {e}")
-                # Retourner des taux par défaut en cas d'erreur
-                rates = cls._get_fallback_rates(base_currency)
-        
-        return rates
-    
-    @classmethod
-    def _get_fallback_rates(cls, base_currency='XOF'):
-        """Taux de secours en cas d'échec de l'API"""
-        # Taux approximatifs (à mettre à jour régulièrement)
-        fallback_rates = {
-            'XOF': {
-                'XOF': 1.0,
-                'USD': 0.0016,  # 1 FCFA ≈ 0.0016 USD
-                'EUR': 0.0015,  # 1 FCFA ≈ 0.0015 EUR
-            },
-            'USD': {
-                'XOF': 620.0,   # 1 USD ≈ 620 FCFA
-                'USD': 1.0,
-                'EUR': 0.92,    # 1 USD ≈ 0.92 EUR
-            },
-            'EUR': {
-                'XOF': 655.96,  # 1 EUR ≈ 656 FCFA (taux fixe CFA)
-                'USD': 1.09,    # 1 EUR ≈ 1.09 USD
-                'EUR': 1.0,
-            }
-        }
-        
-        return {
-            'base': base_currency,
-            'rates': fallback_rates.get(base_currency, {}),
-            'timestamp': datetime.now().isoformat(),
-            'fallback': True
-        }
-    
-    @classmethod
-    def convert(cls, amount, from_currency='XOF', to_currency='USD'):
+    @staticmethod
+    def convert(amount, from_currency, to_currency):
         """
         Convertit un montant d'une devise à une autre
-        
-        Args:
-            amount: Montant à convertir
-            from_currency: Devise source (XOF, USD, EUR)
-            to_currency: Devise cible (XOF, USD, EUR)
-        
-        Returns:
-            Decimal: Montant converti
+        :param amount: Montant à convertir
+        :param from_currency: Code devise source
+        :param to_currency: Code devise cible
+        :return: Montant converti (Decimal)
         """
         if from_currency == to_currency:
             return Decimal(str(amount))
         
-        # Récupérer les taux de change
-        rates_data = cls.get_exchange_rates(from_currency)
-        rates = rates_data.get('rates', {})
-        
-        if to_currency not in rates:
-            raise ValueError(f"Devise {to_currency} non supportée")
-        
-        rate = Decimal(str(rates[to_currency]))
-        converted_amount = Decimal(str(amount)) * rate
-        
-        return converted_amount.quantize(Decimal('0.01'))
+        try:
+            # Tenter de récupérer le taux direct
+            rate = ExchangeRate.objects.get(
+                base_currency__code=from_currency,
+                target_currency__code=to_currency,
+                is_active=True
+            )
+            return Decimal(str(amount)) * rate.rate
+        except ExchangeRate.DoesNotExist:
+            # Tenter de récupérer le taux inverse
+            try:
+                inverse_rate = ExchangeRate.objects.get(
+                    base_currency__code=to_currency,
+                    target_currency__code=from_currency,
+                    is_active=True
+                )
+                return Decimal(str(amount)) / inverse_rate.rate
+            except ExchangeRate.DoesNotExist:
+                # Fallback sur les taux par défaut
+                return _fallback_convert(amount, from_currency, to_currency)
     
-    @classmethod
-    def convert_price(cls, price, from_currency='XOF', to_currency='USD'):
+    @staticmethod
+    def convert_price(amount, from_currency, to_currency):
         """
-        Convertit un prix et le formate
+        Convertit un prix et retourne un dictionnaire formaté
+        COMPATIBLE avec votre views.py
+        """
+        converted_amount = CurrencyConverter.convert(amount, from_currency, to_currency)
         
-        Returns:
-            dict: {amount: Decimal, formatted: str, symbol: str}
-        """
-        converted = cls.convert(price, from_currency, to_currency)
-        currency_info = cls.SUPPORTED_CURRENCIES.get(to_currency, {})
+        # Obtenir le symbole et le code
+        currency_info = CurrencyConverter.SUPPORTED_CURRENCIES.get(to_currency, {})
+        symbol = currency_info.get('symbol', to_currency)
+        code = to_currency
+        
+        # Formater le montant
+        if to_currency == 'XOF':
+            formatted = f"{converted_amount:,.0f} {symbol}".replace(',', ' ')
+        else:
+            formatted = f"{converted_amount:.2f} {symbol}"
         
         return {
-            'amount': converted,
-            'formatted': f"{currency_info.get('symbol', '')} {converted:,.2f}",
-            'symbol': currency_info.get('symbol', ''),
-            'code': to_currency
+            'amount': converted_amount,
+            'formatted': formatted,
+            'symbol': symbol,
+            'code': code
         }
     
-    @classmethod
-    def get_all_conversions(cls, amount, base_currency='XOF'):
+    @staticmethod
+    def get_exchange_rates(base_currency='XOF'):
         """
-        Retourne le montant converti dans toutes les devises supportées
-        
-        Returns:
-            dict: {'XOF': {...}, 'USD': {...}, 'EUR': {...}}
+        Retourne tous les taux de change depuis une devise de base
+        COMPATIBLE avec votre views.py
         """
-        conversions = {}
+        rates = {}
         
-        for currency_code in cls.SUPPORTED_CURRENCIES.keys():
-            conversions[currency_code] = cls.convert_price(
-                amount, 
-                base_currency, 
-                currency_code
-            )
+        for currency_code in CurrencyConverter.SUPPORTED_CURRENCIES.keys():
+            if currency_code == base_currency:
+                rates[currency_code] = 1.0
+            else:
+                try:
+                    rate_obj = ExchangeRate.objects.get(
+                        base_currency__code=base_currency,
+                        target_currency__code=currency_code,
+                        is_active=True
+                    )
+                    rates[currency_code] = float(rate_obj.rate)
+                except ExchangeRate.DoesNotExist:
+                    # Fallback sur les taux par défaut
+                    if base_currency == 'XOF' and currency_code == 'EUR':
+                        rates[currency_code] = 0.001525
+                    elif base_currency == 'XOF' and currency_code == 'USD':
+                        rates[currency_code] = 0.001667
+                    elif base_currency == 'EUR' and currency_code == 'XOF':
+                        rates[currency_code] = 655.957
+                    elif base_currency == 'USD' and currency_code == 'XOF':
+                        rates[currency_code] = 599.85
+                    else:
+                        rates[currency_code] = 1.0
         
-        return conversions
+        return rates
+    
+    @staticmethod
+    def format_price(amount, currency_code='XOF'):
+        """Formate un prix avec le symbole approprié"""
+        currency_info = CurrencyConverter.SUPPORTED_CURRENCIES.get(currency_code, {})
+        symbol = currency_info.get('symbol', currency_code)
+        
+        amount = Decimal(str(amount))
+        if currency_code == 'XOF':
+            return f"{amount:,.0f} {symbol}".replace(',', ' ')
+        else:
+            return f"{amount:.2f} {symbol}"
 
 
-# Fonctions utilitaires pour les templates
+def _fallback_convert(amount, from_currency, to_currency):
+    """Conversion de secours avec taux fixes"""
+    amount = Decimal(str(amount))
+    
+    # Convertir d'abord en FCFA (XOF)
+    if from_currency == 'EUR':
+        amount_in_xof = amount * Decimal('655.957')
+    elif from_currency == 'USD':
+        amount_in_xof = amount * Decimal('599.85')
+    elif from_currency == 'XOF':
+        amount_in_xof = amount
+    else:
+        return amount
+    
+    # Convertir de FCFA vers la devise cible
+    if to_currency == 'EUR':
+        return amount_in_xof / Decimal('655.957')
+    elif to_currency == 'USD':
+        return amount_in_xof / Decimal('599.85')
+    elif to_currency == 'XOF':
+        return amount_in_xof
+    
+    return amount
+
+
+def get_user_currency(request):
+    """
+    Retourne le code de devise préféré de l'utilisateur
+    COMPATIBLE avec votre views.py
+    """
+    # Pour les utilisateurs anonymes : utiliser la session
+    if not request.user.is_authenticated:
+        return request.session.get('preferred_currency', 'XOF')
+    
+    # Pour les utilisateurs connectés : utiliser leur préférence
+    try:
+        preference = UserCurrencyPreference.objects.get(user=request.user)
+        if preference.preferred_currency:
+            return preference.preferred_currency.code
+    except UserCurrencyPreference.DoesNotExist:
+        pass
+    
+    # Fallback sur FCFA
+    return 'XOF'
+
+
 def format_price(amount, currency_code='XOF'):
-    """Formate un prix avec le symbole de la devise"""
-    currency_info = CurrencyConverter.SUPPORTED_CURRENCIES.get(currency_code, {})
-    symbol = currency_info.get('symbol', currency_code)
-    return f"{symbol} {amount:,.2f}"
-
-
-def get_user_currency(user):
-    """Récupère la devise préférée de l'utilisateur"""
-    if user.is_authenticated:
-        try:
-            preference = user.currency_preference
-            return preference.preferred_currency.code if preference.preferred_currency else 'XOF'
-        except:
-            pass
-    return 'XOF'  # Devise par défaut
+    """
+    Fonction standalone pour formater un prix
+    COMPATIBLE avec currency_tags.py
+    """
+    return CurrencyConverter.format_price(amount, currency_code)

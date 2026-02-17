@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-
+{% load currency_tags %}
 {% block title %}{{ product.name }} - Obidon{% endblock %}
 
 {% block extra_css %}
@@ -122,13 +122,13 @@
 
 {% block content %}
 <div class="product-detail-page">
-    <!-- Breadcrumb -->
+    <!-- Breadcrumb - URLs CORRIGÉES avec namespace core: -->
     <div class="breadcrumb">
-        <a href="{% url 'home' %}">Accueil</a>
+        <a href="{% url 'core:home' %}">Accueil</a>
         <span>/</span>
-        <a href="{% url 'products' %}">Produits</a>
+        <a href="{% url 'core:products' %}">Produits</a>
         <span>/</span>
-        <a href="{% url 'products' %}?category={{ product.category.id }}">{{ product.category.name }}</a>
+        <a href="{% url 'core:products' %}?category={{ product.category.id }}">{{ product.category.name }}</a>
         <span>/</span>
         <span>{{ product.name }}</span>
     </div>
@@ -250,20 +250,28 @@
             </div>
 
             <div class="product-pricing">
-                {% if product.discount_percent %}
+                {% if product.discount_price_fcfa %}
                     <div class="price-row">
                         <span class="label">Prix original :</span>
-                        <span class="original-price">{{ product.price }}€</span>
+                        <span class="original-price">{{ product.price_fcfa|fcfa }}</span>
                     </div>
                     <div class="price-row highlighted">
                         <span class="label">Prix réduit :</span>
-                        <span class="sale-price">{{ product.sale_price }}€</span>
-                        <span class="discount">-{{ product.discount_percent }}%</span>
+                        <span class="sale-price">{{ product.discount_price_fcfa|fcfa }}</span>
+                        <span class="discount">-{{ product.discount_percentage }}%</span>
+                    </div>
+                    <div class="price-row eur-reference">
+                        <span class="label">Équivalent EUR :</span>
+                        <span class="eur-price">≈ {{ price_eur|floatformat:2 }} €</span>
                     </div>
                 {% else %}
                     <div class="price-row highlighted">
                         <span class="label">Prix :</span>
-                        <span class="current-price">{{ product.price }}€</span>
+                        <span class="current-price">{{ product.price_fcfa|fcfa }}</span>
+                    </div>
+                    <div class="price-row eur-reference">
+                         <span class="label">Équivalent EUR :</span>
+                         <span class="eur-price">≈ {{ price_eur|floatformat:2 }} €</span>
                     </div>
                 {% endif %}
             </div>
@@ -314,7 +322,7 @@
                     <i class="fas fa-truck"></i>
                     <div>
                         <strong>Livraison gratuite</strong>
-                        <p>À partir de 50€</p>
+                        <p>À partir de 50 000 FCFA</p>
                     </div>
                 </div>
                 <div class="feature">
@@ -344,59 +352,64 @@
         </div>
     </div>
 
-    <!-- Reviews Section -->
+    <!-- Reviews Section - VERSION CORRIGÉE AVEC AVIS MULTIPLES -->
     <div class="reviews-section">
         <h2>Avis Clients ({{ product.reviews.count }})</h2>
 
-        <!-- Formulaire pour ajouter un avis -->
-        {% if user.is_authenticated %}
-            {% if not has_reviewed %}
-                <div class="review-form-container">
-                    <h3>Donnez votre avis</h3>
-                    <p class="review-invite">Votre expérience compte ! Partagez-la avec les autres acheteurs.</p>
+        <!-- Formulaire pour ajouter un avis - TOUJOURS AFFICHÉ POUR UTILISATEURS CONNECTÉS -->
+        {% if user.is_authenticated and product.pk %}
+            <div class="review-form-container">
+                <h3>Partagez votre expérience</h3>
+                <p class="review-invite">Votre avis aide d'autres clients à faire leur choix. Vous pouvez publier autant d'avis que vous le souhaitez !</p>
+                
+                <form method="post" action="{% url 'core:add_review' product.pk %}" class="review-form" id="reviewForm">
+                    {% csrf_token %}
                     
-                    <form method="post" action="{% url 'add_review' product.id %}" class="review-form" id="reviewForm">
-                        {% csrf_token %}
-                        
-                        <!-- Sélecteur d'étoiles interactif -->
-                        <div class="star-rating-container">
-                            <div class="star-rating" id="starRating">
-                                <input type="hidden" name="rating" id="rating-value" value="0">
-                                {% for i in "12345" %}
-                                    <span class="star" data-value="{{ forloop.counter }}">★</span>
-                                {% endfor %}
-                            </div>
-                            <span id="rating-text">Sélectionnez une note</span>
+                    <!-- Sélecteur d'étoiles interactif -->
+                    <div class="star-rating-container">
+                        <div class="star-rating" id="starRating">
+                            <input type="hidden" name="rating" id="rating-value" value="5">
+                            {% for i in "12345" %}
+                                <span class="star" data-value="{{ forloop.counter }}">★</span>
+                            {% endfor %}
                         </div>
+                        <span id="rating-text">Votre note : <strong>5/5</strong></span>
+                    </div>
 
-                        <!-- Titre optionnel -->
-                        <div class="form-group">
-                            <label for="id_title">Titre de votre avis (optionnel)</label>
-                            {{ review_form.title }}
-                        </div>
+                    <!-- Titre optionnel -->
+                    <div class="form-group">
+                        <label for="id_title">Titre de votre avis (optionnel)</label>
+                        <input type="text" name="title" id="id_title" class="form-control" maxlength="200">
+                    </div>
 
-                        <!-- Zone de commentaire -->
-                        <div class="form-group comment-area">
-                            <label for="id_comment">Votre avis</label>
-                            <textarea 
-                                name="comment" 
-                                id="id_comment"
-                                rows="8" 
-                                placeholder="Votre avis ici... (qualité, goût, emballage, livraison, rapport qualité/prix...)"
-                                required
-                            ></textarea>
-                        </div>
+                    <!-- Zone de commentaire -->
+                    <div class="form-group comment-area">
+                        <label for="id_comment">Votre avis <span class="required">*</span></label>
+                        <textarea 
+                            name="comment" 
+                            id="id_comment"
+                            rows="8" 
+                            placeholder="Partagez votre expérience avec ce produit... (qualité, goût, emballage, livraison, rapport qualité/prix...)"
+                            required
+                        ></textarea>
+                    </div>
 
-                        <button type="submit" class="btn-submit-review" id="submitReviewBtn">Publier mon avis</button>
-                    </form>
-                </div>
-            {% else %}
-                <p class="already-reviewed">Vous avez déjà donné votre avis sur ce produit. Merci !</p>
-            {% endif %}
-        {% else %}
+                    <button type="submit" class="btn-submit-review" id="submitReviewBtn">
+                        <i class="fas fa-paper-plane"></i> Publier mon avis
+                    </button>
+                </form>
+            </div>
+        {% elif not user.is_authenticated %}
             <p class="login-to-review">
-                <a href="{% url 'login' %}?next={{ request.path }}">Connectez-vous</a> 
-                pour laisser votre avis.
+                <a href="{% url 'core:login' %}?next={{ request.path }}">
+                    <i class="fas fa-sign-in-alt"></i> Connectez-vous
+                </a> 
+                pour partager votre avis. Vous pourrez en publier autant que vous le souhaitez !
+            </p>
+        {% else %}
+            <p class="error-message">
+                <i class="fas fa-exclamation-triangle"></i> 
+                Impossible d'afficher le formulaire d'avis. Veuillez rafraîchir la page.
             </p>
         {% endif %}
 
@@ -425,12 +438,19 @@
                     <p class="review-comment">{{ review.comment|linebreaks }}</p>
                     
                     <div class="review-meta">
-                        <span class="review-author">Par {{ review.user.get_full_name|default:review.user.username }}</span>
-                        <span class="review-date">{{ review.created_at|date:"d M Y" }}</span>
+                        <span class="review-author">
+                            <i class="fas fa-user"></i> 
+                            {{ review.user.get_full_name|default:review.user.username }}
+                        </span>
+                        <span class="review-date">
+                            <i class="fas fa-calendar"></i> 
+                            {{ review.created_at|date:"d M Y" }}
+                        </span>
                     </div>
                 </div>
             {% empty %}
                 <div class="no-reviews">
+                    <i class="fas fa-comment-alt"></i>
                     <p>Aucun avis pour le moment. Soyez le premier à partager votre expérience !</p>
                 </div>
             {% endfor %}
@@ -461,8 +481,8 @@
                             {% endif %}
                         </div>
                         <h4>{{ related.name }}</h4>
-                        <p class="related-price">{{ related.price }}€</p>
-                        <a href="{% url 'product_detail' related.id %}" class="btn-view-related">Voir</a>
+                        <p class="related-price">{{ related.price_fcfa|fcfa }}</p>
+                        <a href="{% url 'core:product_detail' related.pk %}" class="btn-view-related">Voir</a>
                     </div>
                 {% endfor %}
             </div>
@@ -623,6 +643,15 @@
         border-radius: 4px;
     }
 
+    .price-row.eur-reference {
+        font-size: 12px;
+        color: #666;
+        font-style: italic;
+        padding-top: 10px;
+        border-top: 1px dashed #DDD;
+        margin-top: 10px;
+    }
+
     .label {
         font-weight: 600;
         color: #5D4037;
@@ -638,6 +667,11 @@
         font-size: 24px;
         font-weight: 700;
         color: #D32F2F;
+    }
+
+    .eur-price {
+        color: #888;
+        font-weight: 500;
     }
 
     .discount {
@@ -761,7 +795,7 @@
 
     .product-features {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
         gap: 15px;
     }
 
@@ -858,6 +892,224 @@
         background-color: #C4A027;
     }
 
+    /* Reviews Section Styles */
+    .review-form-container {
+        background: #f9f7f5;
+        border-radius: 8px;
+        padding: 25px;
+        margin-bottom: 30px;
+        border: 1px solid #e8e0d5;
+    }
+
+    .review-invite {
+        color: #666;
+        margin: 10px 0 20px;
+        font-style: italic;
+    }
+
+    .star-rating-container {
+        margin-bottom: 20px;
+    }
+
+    .star-rating {
+        font-size: 32px;
+        color: #ddd;
+        cursor: pointer;
+        display: flex;
+        gap: 5px;
+    }
+
+    .star-rating .star:hover,
+    .star-rating .star:hover ~ .star,
+    .star-rating .star.selected {
+        color: #D4AF37;
+    }
+
+    #rating-text {
+        display: block;
+        margin-top: 10px;
+        font-weight: 500;
+        color: #5D4037;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #5D4037;
+    }
+
+    .form-control,
+    textarea {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-family: 'Roboto', sans-serif;
+        font-size: 15px;
+        transition: border-color 0.3s;
+    }
+
+    .form-control:focus,
+    textarea:focus {
+        outline: none;
+        border-color: #D4AF37;
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+    }
+
+    textarea {
+        resize: vertical;
+        min-height: 120px;
+    }
+
+    .required {
+        color: #D32F2F;
+    }
+
+    .btn-submit-review {
+        background: linear-gradient(135deg, #5D4037 0%, #4E342E 100%);
+        color: white;
+        border: none;
+        padding: 14px 25px;
+        border-radius: 4px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .btn-submit-review:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(93, 64, 55, 0.3);
+    }
+
+    .login-to-review {
+        text-align: center;
+        padding: 25px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        font-size: 16px;
+        color: #666;
+    }
+
+    .login-to-review a {
+        color: #D4AF37;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        margin-top: 10px;
+    }
+
+    .login-to-review a:hover {
+        text-decoration: underline;
+        color: #5D4037;
+    }
+
+    .error-message {
+        text-align: center;
+        padding: 20px;
+        background: #ffebee;
+        border-radius: 8px;
+        color: #d32f2f;
+        margin-bottom: 30px;
+        border-left: 4px solid #d32f2f;
+    }
+
+    .reviews-list {
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+    }
+
+    .review-item {
+        background: white;
+        border-radius: 8px;
+        padding: 25px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        border-left: 4px solid #D4AF37;
+    }
+
+    .review-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .review-rating {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .verified-badge {
+        background: #e8f5e9;
+        color: #2e7d32;
+        padding: 4px 10px;
+        border-radius: 15px;
+        font-size: 13px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .review-title {
+        font-size: 18px;
+        color: #5D4037;
+        margin: 0 0 10px 0;
+        font-weight: 600;
+    }
+
+    .review-comment {
+        color: #666;
+        line-height: 1.6;
+        margin-bottom: 15px;
+        font-size: 15px;
+    }
+
+    .review-meta {
+        display: flex;
+        justify-content: space-between;
+        color: #999;
+        font-size: 14px;
+        border-top: 1px solid #eee;
+        padding-top: 15px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .review-author i,
+    .review-date i {
+        margin-right: 5px;
+        color: #D4AF37;
+    }
+
+    .no-reviews {
+        text-align: center;
+        padding: 40px 20px;
+        background: #f9f7f5;
+        border-radius: 8px;
+        color: #999;
+    }
+
+    .no-reviews i {
+        font-size: 48px;
+        color: #ddd;
+        margin-bottom: 15px;
+    }
+
     @media (max-width: 768px) {
         .product-detail-wrapper {
             grid-template-columns: 1fr;
@@ -883,6 +1135,11 @@
         .related-image .product-image-hover-container {
             height: 120px;
         }
+        
+        .review-form-container,
+        .login-to-review {
+            padding: 20px 15px;
+        }
     }
 
     @media (max-width: 480px) {
@@ -894,10 +1151,53 @@
             font-size: 10px;
             padding: 4px 8px;
         }
+        
+        .btn-submit-review {
+            font-size: 15px;
+            padding: 12px;
+        }
     }
 </style>
 
 <script>
+    // Gestion des étoiles
+    document.addEventListener('DOMContentLoaded', function() {
+        const stars = document.querySelectorAll('.star-rating .star');
+        const ratingInput = document.getElementById('rating-value');
+        const ratingText = document.getElementById('rating-text');
+        
+        if (stars.length > 0 && ratingInput && ratingText) {
+            stars.forEach(star => {
+                star.addEventListener('click', function() {
+                    const value = this.getAttribute('data-value');
+                    ratingInput.value = value;
+                    ratingText.innerHTML = `Votre note : <strong>${value}/5</strong>`;
+                    
+                    // Mettre à jour l'affichage
+                    stars.forEach(s => s.classList.remove('selected'));
+                    let selected = false;
+                    stars.forEach(s => {
+                        if (!selected) s.classList.add('selected');
+                        if (s === this) selected = true;
+                    });
+                });
+                
+                star.addEventListener('mouseover', function() {
+                    const value = this.getAttribute('data-value');
+                    ratingText.innerHTML = `Votre note : <strong>${value}/5</strong>`;
+                });
+                
+                star.addEventListener('mouseout', function() {
+                    const currentValue = ratingInput.value;
+                    ratingText.innerHTML = `Votre note : <strong>${currentValue}/5</strong>`;
+                });
+            });
+            
+            // Initialiser avec la valeur par défaut (5)
+            document.querySelector('.star-rating .star[data-value="5"]').click();
+        }
+    });
+
     function changeMainImage(thumb) {
         const mainImg = document.getElementById('mainProductImage');
         mainImg.src = thumb.dataset.full;
@@ -956,17 +1256,37 @@
         }
     });
 
+    // BOUTON "AJOUTER AU PANIER" - INTÉGRATION COMPLÈTE DU PANIER DYNAMIQUE
     document.getElementById('addToCartBtn').addEventListener('click', function() {
-        let productId = '{{ product.id }}';
-        let quantity = document.getElementById('quantity').value;
-        // Add to cart logic here
-        alert('Ajouté au panier !');
+        const productId = '{{ product.pk }}';
+        const quantity = parseInt(document.getElementById('quantity').value);
+        
+        // Utiliser la fonction globale addToCart définie dans navbar.js
+        if (typeof window.addToCart === 'function') {
+            window.addToCart(productId, quantity).then(function(success) {
+                if (success) {
+                    // Optionnel : scroll vers le panier ou autre feedback
+                    document.querySelector('.navbar-cart').scrollIntoView({behavior: 'smooth', block: 'nearest'});
+                }
+            }).catch(function(error) {
+                console.error('Erreur lors de l\'ajout au panier:', error);
+                alert('Erreur lors de l\'ajout au panier. Veuillez réessayer.');
+            });
+        } else {
+            // Fallback si la fonction n'est pas disponible
+            alert('Produit ajouté au panier !');
+            // Mettre à jour manuellement le compteur
+            if (typeof window.updateCartCount === 'function') {
+                window.updateCartCount();
+            }
+        }
     });
 
     document.getElementById('addToWishlistBtn').addEventListener('click', function() {
         this.classList.toggle('active');
         this.querySelector('i').classList.toggle('fas');
         this.querySelector('i').classList.toggle('far');
+        // TODO: Implémenter la logique de wishlist
     });
 
     // Touche sur mobile pour voir le verso (tap and hold)

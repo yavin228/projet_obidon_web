@@ -1,31 +1,23 @@
+# core/management/commands/init_currencies.py
 from django.core.management.base import BaseCommand
 from core.models import Currency
-from core.currency_service import CurrencyConverter
 
 class Command(BaseCommand):
-    help = 'Initialize currencies in the database'
+    help = 'Initialise les devises par défaut'
 
-    def handle(self, *args, **options):
-        self.stdout.write('Initializing currencies...')
+    def handle(self, *args, **kwargs):
+        currencies = [
+            {'code': 'XOF', 'name': 'Franc CFA', 'symbol': 'FCFA', 'flag': '🇹🇬', 'is_default': True},
+            {'code': 'USD', 'name': 'Dollar américain', 'symbol': '$', 'flag': '🇺🇸', 'is_default': False},
+            {'code': 'EUR', 'name': 'Euro', 'symbol': '€', 'flag': '🇪🇺', 'is_default': False},
+        ]
         
-        for code, info in CurrencyConverter.SUPPORTED_CURRENCIES.items():
+        for currency_data in currencies:
             currency, created = Currency.objects.get_or_create(
-                code=code,
-                defaults={
-                    'name': info['name'],
-                    'symbol': info['symbol'],
-                    'flag': info['flag'],
-                    'is_default': info['is_default']
-                }
+                code=currency_data['code'],
+                defaults=currency_data
             )
-            
             if created:
-                self.stdout.write(
-                    self.style.SUCCESS(f'Created currency: {code} - {info["name"]}')
-                )
+                self.stdout.write(self.style.SUCCESS(f'Devise créée: {currency.code}'))
             else:
-                self.stdout.write(
-                    self.style.WARNING(f'Currency already exists: {code}')
-                )
-        
-        self.stdout.write(self.style.SUCCESS('Currency initialization complete!'))
+                self.stdout.write(self.style.WARNING(f'Devise existante: {currency.code}'))

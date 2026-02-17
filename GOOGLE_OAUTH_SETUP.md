@@ -114,5 +114,5 @@ python manage.py runserver
 # - http://localhost:8000/account/ (voir la page de compte)
 
 # Nouveau Dashboard Admin
-Dashboard Principal: http://localhost:8000/admin-dashboard/
-Analytics: http://localhost:8000/admin-dashboard/analytics/
+Dashboard Principal: http://localhost:8000/dashboard/
+Analytics: http://localhost:8000/dashboard/analytics/

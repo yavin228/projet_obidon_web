@@ -1,33 +1,46 @@
 from django.urls import path
-from django.contrib.auth.views import LogoutView
 from . import views
-from .views import (
-    api_convert_price, api_exchange_rates, home, login_view, signup_view, account_view, products_view, 
-    product_detail_view, product_type_view, cart_view, checkout_view, add_to_cart_ajax, 
-    process_payment, payment_success_view, update_currency_preference
-)
-from .dashboard_views import dashboard, dashboard_analytics
+
+app_name = 'core'
 
 urlpatterns = [
-    path('', home, name='home'),
-    path('login/', login_view, name='login'),
-    path('signup/', signup_view, name='signup'),
-    path('account/', account_view, name='account'),
-    path('logout/', LogoutView.as_view(next_page='home'), name='logout'),
-    path('products/', products_view, name='products'),
-    path('products/<str:product_type>/', product_type_view, name='product_type'),
-    path('product/<int:product_id>/', product_detail_view, name='product_detail'),
-    path('cart/', cart_view, name='cart'),
-    path('checkout/', checkout_view, name='checkout'),
-    path('checkout/success/', payment_success_view, name='payment_success'),
-    path('api/add-to-cart/', add_to_cart_ajax, name='add_to_cart_ajax'),
-    path('api/process-payment/', process_payment, name='process_payment'),
-    path('admin-dashboard/', dashboard, name='dashboard'),
-    path('admin-dashboard/analytics/', dashboard_analytics, name='dashboard_analytics'),
-    # URLs pour la gestion des devises
-    path('currency/update/',update_currency_preference, name='update_currency'),
-    path('api/exchange-rates/',api_exchange_rates, name='api_exchange_rates'),
-    path('api/convert-price/',api_convert_price, name='api_convert_price'),
-    path('product/<int:product_id>/review/', views.add_review, name='add_review'),
+    # Pages principales
+    path('', views.home, name='home'),
+    path('products/', views.products_view, name='products'),
+    path('products/<str:product_type>/', views.product_type_view, name='product_type'),
+    path('product/<int:product_id>/', views.product_detail_view, name='product_detail'),
+    
+    # Panier
+    path('cart/', views.cart_view, name='cart'),
+    path('cart/add/', views.add_to_cart_ajax, name='add_to_cart'),
+    path('api/cart-count/', views.api_cart_count, name='api_cart_count'),
+    path('api/cart/update/', views.api_cart_update, name='api_cart_update'),
+    
+    # Checkout
+    path('checkout/', views.checkout_view, name='checkout'),
+    path('payment/process/', views.process_payment, name='process_payment'),
+    path('payment/success/', views.payment_success_view, name='payment_success'),
+    
+    # Compte utilisateur
+    path('account/', views.account_view, name='account'),
+    path('login/', views.login_view, name='login'),
+    path('signup/', views.signup_view, name='signup'),
+    
+    # Gestion des devises
+    path('currency/update/', views.update_currency_preference, name='update_currency'),
+    path('api/exchange-rates/', views.api_exchange_rates, name='api_exchange_rates'),
+    path('api/convert-price/', views.api_convert_price, name='api_convert_price'),
+    
+    # Avis produits
+    path('review/add/<int:product_id>/', views.add_review, name='add_review'),
+    
+    # Dashboard admin
+    path('dashboard/', views.dashboard_view, name='dashboard'),
+    path('dashboard/analytics/', views.dashboard_analytics_view, name='dashboard_analytics'),  
+    
+    # Debug (optionnel)
+    path('debug/session/', views.debug_session, name='debug_session'),
+    
+   
 ]
 

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load currency_tags %}
 
 {% block title %}Produits - Obidon{% endblock %}
 
@@ -150,12 +151,12 @@
                     </select>
                 </div>
 
-                <!-- Price Range -->
+                <!-- Price Range (en FCFA) -->
                 <div class="filter-group">
-                    <label>Gamme de prix</label>
+                    <label>Gamme de prix (FCFA)</label>
                     <div class="price-inputs">
-                        <input type="number" name="min_price" placeholder="Min" min="0">
-                        <input type="number" name="max_price" placeholder="Max" min="0">
+                        <input type="number" name="min_price" placeholder="Min" min="0" step="1000">
+                        <input type="number" name="max_price" placeholder="Max" min="0" step="1000">
                     </div>
                 </div>
 
@@ -164,14 +165,14 @@
                     <label for="sort">Trier par</label>
                     <select id="sort" name="sort">
                         <option value="-created_at">Récents</option>
-                        <option value="price">Prix croissant</option>
-                        <option value="-price">Prix décroissant</option>
+                        <option value="price_fcfa">Prix croissant</option>
+                        <option value="-price_fcfa">Prix décroissant</option>
                         <option value="-rating">Les mieux notés</option>
                     </select>
                 </div>
 
                 <button type="submit" class="btn-filter">Appliquer les filtres</button>
-                <a href="{% url 'products' %}" class="btn-reset">Réinitialiser</a>
+                <a href="{% url 'core:products' %}" class="btn-reset">Réinitialiser</a>
             </form>
         </aside>
 
@@ -198,8 +199,8 @@
                                         </div>
                                     {% endif %}
 
-                                    {% if product.discount_percent %}
-                                        <div class="discount-badge">-{{ product.discount_percent }}%</div>
+                                    {% if product.discount_percentage %}
+                                        <div class="discount-badge">-{{ product.discount_percentage }}%</div>
                                     {% endif %}
                                 </div>
                             </div>
@@ -226,20 +227,20 @@
                                     {% endif %}
                                 </div>
 
-                                <div class="product-price">
-                                    {% if product.discount_percent %}
-                                        <span class="original-price">{{ product.price }}€</span>
-                                        <span class="sale-price">{{ product.sale_price }}€</span>
-                                    {% else %}
-                                        <span class="price">{{ product.price }}€</span>
-                                    {% endif %}
+                               <div class="product-price">
+                                     {% if product.discount_price_fcfa %}
+                                         <span class="original-price">{{ product.price_fcfa|fcfa }}</span>
+                                         <span class="sale-price">{{ product.discount_price_fcfa|fcfa }}</span>
+                                     {% else %}
+                                         <span class="price">{{ product.price_fcfa|fcfa }}</span>
+                                     {% endif %}
                                 </div>
 
                                 <p class="product-desc">{{ product.description|truncatewords:15 }}</p>
                             </div>
 
                             <div class="product-actions">
-                                <a href="{% url 'product_detail' product.id %}" class="btn-view">Voir détail</a>
+                                <a href="{% url 'core:product_detail' product.id %}" class="btn-view">Voir détail</a>
                                 <button class="btn-cart add-to-cart" data-product-id="{{ product.id }}">
                                     <i class="fas fa-shopping-cart"></i> Ajouter
                                 </button>
@@ -341,6 +342,9 @@
         font-weight: 600;
         cursor: pointer;
         transition: all 0.3s;
+        text-align: center;
+        display: block;
+        text-decoration: none;
     }
 
     .btn-filter {
@@ -437,6 +441,7 @@
         align-items: center;
         gap: 10px;
         margin-bottom: 10px;
+        flex-wrap: wrap;
     }
 
     .original-price {
@@ -601,8 +606,12 @@
             button.addEventListener('click', function(e) {
                 e.stopPropagation();
                 const productId = this.getAttribute('data-product-id');
-                // Ajouter la logique d'ajout au panier ici
-                alert('Produit ajouté au panier !');
+                // Utiliser la fonction globale addToCart définie dans navbar.js
+                if (typeof window.addToCart === 'function') {
+                    window.addToCart(productId, 1);
+                } else {
+                    alert('Produit ajouté au panier !');
+                }
             });
         });
     });

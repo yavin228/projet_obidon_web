@@ -182,6 +182,22 @@
         
     </style>
     {% block extra_css %}{% endblock %}
+
+    <script>
+// Ajouter la classe "scrolled" quand on scroll
+document.addEventListener('scroll', function() {
+    const navbar = document.querySelector('.navbar');
+    const categoriesMenu = document.querySelector('.categories-menu');
+    if (window.scrollY > 10) {
+        navbar.classList.add('scrolled');
+        categoriesMenu.classList.add('scrolled');
+    } else {
+        navbar.classList.remove('scrolled');
+        categoriesMenu.classList.remove('scrolled');
+    }
+});
+</script>
+
 </head>
 <body>
     {% include 'navbar.html' %}

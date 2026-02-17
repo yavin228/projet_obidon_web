@@ -1,11 +1,13 @@
 {% load static %}
+{% load currency_tags %}
+
 
 <!-- NAVBAR PRINCIPALE -->
 <nav class="navbar">
     <div class="navbar-container">
         <!-- Logo et nom -->
         <div class="navbar-brand">
-            <a href="{% url 'home' %}" class="logo-link">
+            <a href="{% url 'core:home' %}" class="logo-link">
                 <div class="logo-container">
                     <img src="{% static 'images/logo.jpeg' %}" alt="Obidon Logo" class="logo-img">
                 </div>
@@ -30,7 +32,7 @@
 
         <!-- Barre de recherche -->
         <div class="navbar-search">
-            <form class="search-form" method="get" action="{% url 'products' %}">
+            <form class="search-form" method="get" action="{% url 'core:products' %}">
                 <select class="search-category" name="type">
                     <option value="">Toutes catégories</option>
                     <option value="cafe">Cafés</option>
@@ -54,11 +56,23 @@
             </select>
         </div>
 
+        <div class="navbar-currency">
+            <form id="currency-form" method="post" action="{% url 'core:update_currency' %}">
+                 {% csrf_token %}
+                 <select name="currency" onchange="this.form.submit()" class="currency-select">
+                   <option value="XOF" {% if user_currency == 'XOF' %}selected{% endif %}>🇹🇬 (FCFA)</option>
+                   <option value="USD" {% if user_currency == 'USD' %}selected{% endif %}>🇺🇸 (USD $)</option>
+                   <option value="EUR" {% if user_currency == 'EUR' %}selected{% endif %}>🇪🇺 (EUR €)</option>
+                </select>
+            </form>
+        </div>
+
+
         <!-- Menu utilisateur -->
         <div class="navbar-user">
             {% if user.is_authenticated %}
                 <!-- Profil connecté -->
-                <a href="{% url 'account' %}" class="user-profile-link">
+                <a href="{% url 'core:account' %}" class="user-profile-link">
                     <div class="user-avatar">
                         <i class="fas fa-user-circle"></i>
                     </div>
@@ -70,16 +84,16 @@
                 
                 <!-- Menu dropdown caché -->
                 <div class="user-dropdown-menu">
-                    <a href="{% url 'account' %}" class="dropdown-item">
+                    <a href="{% url 'core:account' %}" class="dropdown-item">
                         <i class="fas fa-user"></i> Mon Profil
                     </a>
-                    <a href="{% url 'account' %}" class="dropdown-item">
+                    <a href="{% url 'core:account' %}" class="dropdown-item">
                         <i class="fas fa-shopping-bag"></i> Mes Commandes
                     </a>
-                    <a href="{% url 'account' %}" class="dropdown-item">
+                    <a href="{% url 'core:account' %}" class="dropdown-item">
                         <i class="fas fa-heart"></i> Favoris
                     </a>
-                    <a href="{% url 'account' %}" class="dropdown-item">
+                    <a href="{% url 'core:account' %}" class="dropdown-item">
                         <i class="fas fa-cog"></i> Paramètres
                     </a>
                     <hr>
@@ -89,7 +103,7 @@
                 </div>
             {% else %}
                 <!-- Bouton de connexion si non connecté -->
-                <a href="{% url 'login' %}" class="btn-login-navbar">
+                <a href="{% url 'core:login' %}" class="btn-login-navbar">
                     <i class="fas fa-sign-in-alt"></i>
                     <span class="login-text">Connexion</span>
                 </a>
@@ -98,9 +112,9 @@
 
         <!-- Panier -->
         <div class="navbar-cart">
-            <a href="{% url 'cart' %}" class="cart-link">
+            <a href="{% url 'core:cart' %}" class="cart-link">
                 <i class="fas fa-shopping-cart"></i>
-                <span class="cart-count">0</span>
+                <span class="cart-count" id="cartCount">0</span>
                 <span class="cart-text">Panier</span>
             </a>
         </div>
@@ -112,7 +126,7 @@
     <div class="categories-container">
         <!-- Catégorie Cafés avec dropdown -->
         <div class="category-dropdown">
-            <a href="{% url 'product_type' 'cafe' %}" class="category-link active">
+            <a href="{% url 'core:product_type' 'cafe' %}" class="category-link active">
                 <i class="fas fa-coffee"></i>
                 <span>Cafés</span>
             </a>
@@ -120,7 +134,7 @@
 
         <!-- Catégorie Pains avec dropdown -->
         <div class="category-dropdown">
-            <a href="{% url 'product_type' 'pain' %}" class="category-link">
+            <a href="{% url 'core:product_type' 'pain' %}" class="category-link">
                 <i class="fas fa-bread-slice"></i>
                 <span>Pains</span>
             </a>
@@ -128,7 +142,7 @@
 
         <!-- Catégorie Machines à café -->
         <div class="category-dropdown">
-            <a href="{% url 'product_type' 'machine' %}" class="category-link">
+            <a href="{% url 'core:product_type' 'machine' %}" class="category-link">
                 <i class="fas fa-blender"></i>
                 <span>Machines à café</span>
             </a>
@@ -136,14 +150,14 @@
 
         <!-- Catégorie Accessoires -->
         <div class="category-dropdown">
-            <a href="{% url 'product_type' 'accessoire' %}" class="category-link">
+            <a href="{% url 'core:product_type' 'accessoire' %}" class="category-link">
                 <i class="fas fa-utensils"></i>
                 <span>Accessoires</span>
             </a>
         </div>
 
         <!-- Tous les produits -->
-        <a href="{% url 'products' %}" class="category-link">
+        <a href="{% url 'core:products' %}" class="category-link">
             <i class="fas fa-th"></i>
             <span>Tous les produits</span>
         </a>

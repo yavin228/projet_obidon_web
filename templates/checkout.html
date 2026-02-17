@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load currency_tags %}
 
 {% block title %}Passer la commande - Obidon{% endblock %}
 
@@ -71,7 +72,7 @@
                                 <strong>Livraison Express</strong>
                                 <p>2-3 jours</p>
                             </div>
-                            <span class="price">9.99€</span>
+                            <span class="price">{{ 6559.60|fcfa }}</span>
                         </label>
                     </div>
 
@@ -82,7 +83,7 @@
                                 <strong>Livraison Overnight</strong>
                                 <p>Lendemain</p>
                             </div>
-                            <span class="price">19.99€</span>
+                            <span class="price">{{ 13119.20|fcfa }}</span>
                         </label>
                     </div>
                 </div>
@@ -150,16 +151,13 @@
             <h2>Résumé de la commande</h2>
 
             <div class="summary-items">
-                <div class="summary-item">
-                    <span>Produit 1</span>
-                    <span>x 2</span>
-                    <span class="price">49.98€</span>
-                </div>
-                <div class="summary-item">
-                    <span>Produit 2</span>
-                    <span>x 1</span>
-                    <span class="price">24.99€</span>
-                </div>
+                {% for item in cart_items %}
+                    <div class="summary-item">
+                        <span>{{ item.product.name|truncatechars:30 }}</span>
+                        <span>x {{ item.quantity }}</span>
+                        <span class="price">{{ item.total_fcfa|fcfa }}</span>
+                    </div>
+                {% endfor %}
             </div>
 
             <div class="summary-divider"></div>
@@ -167,15 +165,15 @@
             <div class="summary-totals">
                 <div class="summary-row">
                     <span>Sous-total</span>
-                    <strong>74.97€</strong>
+                    <strong>{{ total_price_fcfa|fcfa }}</strong>
                 </div>
                 <div class="summary-row">
                     <span>Livraison</span>
                     <strong id="shippingCost">Gratuit</strong>
                 </div>
                 <div class="summary-row">
-                    <span>TVA</span>
-                    <strong>14.99€</strong>
+                    <span>TVA (20%)</span>
+                    <strong>{{ tax_fcfa|default:0|fcfa }}</strong>
                 </div>
             </div>
 
@@ -183,7 +181,7 @@
 
             <div class="summary-row total">
                 <span>Total</span>
-                <strong id="totalPrice">89.96€</strong>
+                <strong id="totalPrice">{{ total_amount_fcfa|default:0|fcfa }}</strong>
             </div>
 
             <div class="security-badge">
@@ -553,10 +551,29 @@
     function updateShippingCost() {
         let cost = 0;
         let checked = document.querySelector('input[name="shipping"]:checked').value;
-        if (checked === 'express') cost = 9.99;
-        else if (checked === 'overnight') cost = 19.99;
+        if (checked === 'express') cost = 6559.60;  // 9.99€ convertis en FCFA
+        else if (checked === 'overnight') cost = 13119.20;  // 19.99€ convertis en FCFA
 
-        document.getElementById('shippingCost').innerText = cost === 0 ? 'Gratuit' : cost + '€';
+        document.getElementById('shippingCost').innerText = cost === 0 ? 'Gratuit' : formatFcfa(cost);
+        
+        // Mettre à jour le total
+        updateTotalPrice(cost);
+    }
+
+    function formatFcfa(amount) {
+        // Formater avec séparateur de milliers
+        const formatted = Math.round(amount).toLocaleString('fr-FR');
+        return formatted + ' FCFA';
+    }
+
+    function updateTotalPrice(shippingCost) {
+        // Le total devrait être calculé côté serveur, mais pour l'exemple :
+        // Sous-total + TVA + frais de livraison
+        const subtotal = {{ total_price_fcfa|default:0 }};
+        const tax = {{ tax_fcfa|default:0 }};
+        const total = subtotal + tax + shippingCost;
+        
+        document.getElementById('totalPrice').innerText = formatFcfa(total);
     }
 
     function placeOrder() {

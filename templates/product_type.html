@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load currency_tags %}
 
 {% block title %}{{ product_type_display }} - Obidon{% endblock %}
 
@@ -130,9 +131,9 @@
         {% if sub_categories %}
         <div class="type-navigation">
             <div class="sub-categories">
-                <a href="{% url 'product_type' product_type %}" class="sub-category-link all-link">Tous les {{ product_type_display|lower }}</a>
+                <a href="{% url 'core:product_type' product_type %}" class="sub-category-link all-link">Tous les {{ product_type_display|lower }}</a>
                 {% for category in sub_categories %}
-                    <a href="{% url 'products' %}?category={{ category.id }}" class="sub-category-link">{{ category.name }}</a>
+                    <a href="{% url 'core:products' %}?category={{ category.id }}" class="sub-category-link">{{ category.name }}</a>
                 {% endfor %}
             </div>
         </div>
@@ -153,7 +154,7 @@
 
                 <!-- Price Range -->
                 <div class="filter-group">
-                    <label>Gamme de prix</label>
+                    <label>Gamme de prix (FCFA)</label>
                     <div class="price-inputs">
                         <input type="number" name="min_price" placeholder="Min" min="0">
                         <input type="number" name="max_price" placeholder="Max" min="0">
@@ -165,14 +166,14 @@
                     <label for="sort">Trier par</label>
                     <select id="sort" name="sort">
                         <option value="-created_at">Récents</option>
-                        <option value="price">Prix croissant</option>
-                        <option value="-price">Prix décroissant</option>
+                        <option value="price_fcfa">Prix croissant</option>
+                        <option value="-price_fcfa">Prix décroissant</option>
                         <option value="-rating">Les mieux notés</option>
                     </select>
                 </div>
 
                 <button type="submit" class="btn-filter">Appliquer les filtres</button>
-                <a href="{% url 'product_type' product_type %}" class="btn-reset">Réinitialiser</a>
+                <a href="{% url 'core:product_type' product_type %}" class="btn-reset">Réinitialiser</a>
             </form>
         </aside>
 
@@ -201,7 +202,8 @@
                                         </div>
                                     {% endif %}
 
-                                    {% if product.discount_percentage %}
+                                    <!-- CORRECTION : discount_percentage (sans suffixe _fcfa) -->
+                                    {% if product.discount_price_fcfa %}
                                         <div class="discount-badge">-{{ product.discount_percentage }}%</div>
                                     {% endif %}
                                 </div>
@@ -230,11 +232,12 @@
                                 </div>
 
                                 <div class="product-price">
-                                    {% if product.discount_price %}
-                                        <span class="original-price">{{ product.price }}€</span>
-                                        <span class="sale-price">{{ product.discount_price }}€</span>
+                                    <!-- Afficher les prix en FCFA -->
+                                    {% if product.discount_price_fcfa %}
+                                        <span class="original-price">{{ product.price_fcfa|fcfa }}</span>
+                                        <span class="sale-price">{{ product.discount_price_fcfa|fcfa }}</span>
                                     {% else %}
-                                        <span class="price">{{ product.price }}€</span>
+                                        <span class="price">{{ product.price_fcfa|fcfa }}</span>
                                     {% endif %}
                                 </div>
 
@@ -242,7 +245,7 @@
                             </div>
 
                             <div class="product-actions">
-                                <a href="{% url 'product_detail' product.id %}" class="btn-view">Voir détail</a>
+                                <a href="{% url 'core:product_detail' product.id %}" class="btn-view">Voir détail</a>
                                 <button class="btn-cart add-to-cart" data-product-id="{{ product.id }}">
                                     <i class="fas fa-shopping-cart"></i> Ajouter
                                 </button>
@@ -644,13 +647,17 @@
             });
         });
 
-        // Gestion du clic sur le bouton "Ajouter au panier"
+        // Gestion du clic sur le bouton "Ajouter au panier" - INTÉGRATION PANIER DYNAMIQUE
         document.querySelectorAll('.add-to-cart').forEach(function(button) {
             button.addEventListener('click', function(e) {
                 e.stopPropagation();
                 const productId = this.getAttribute('data-product-id');
-                // Ajouter la logique d'ajout au panier ici
-                alert('Produit ajouté au panier !');
+                // Utiliser la fonction globale addToCart définie dans navbar.js
+                if (typeof window.addToCart === 'function') {
+                    window.addToCart(productId, 1);
+                } else {
+                    alert('Produit ajouté au panier !');
+                }
             });
         });
     });

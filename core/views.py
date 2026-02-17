@@ -1,22 +1,21 @@
-from django.shortcuts import render, redirect, get_object_or_404,redirect
+from django.conf import settings
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
+from django.urls import reverse_lazy
+from django.urls import reverse_lazy
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from allauth.socialaccount.models import SocialApp
-from django.db.models import Sum, Q
-from .models import Category, Product, Order, Review
+from django.db.models import Sum, Q, Count
+from django.utils import timezone
 from decimal import Decimal
 import json
-from .models import Currency, UserCurrencyPreference
-from .currency_service import CurrencyConverter, get_user_currency
-from .models import Currency, UserCurrencyPreference
+from .models import Category, Product, Order, Review, Currency, UserCurrencyPreference, User, OrderItem
+from core.currency_service import CurrencyConverter, get_user_currency  # IMPORT CORRECT
 from .forms import ReviewForm
-
-
-
 
 
 def home(request):
@@ -48,13 +47,13 @@ def products_view(request):
             if selected_category:
                 products = products.filter(category=selected_category)
     
-    # Filter by price range
+    # Filter by price range (FCFA)
     min_price = request.GET.get('min_price')
     max_price = request.GET.get('max_price')
     if min_price:
-        products = products.filter(price__gte=min_price)
+        products = products.filter(price_fcfa__gte=min_price)
     if max_price:
-        products = products.filter(price__lte=max_price)
+        products = products.filter(price_fcfa__lte=max_price)
     
     # Search
     query = request.GET.get('q')
@@ -64,8 +63,12 @@ def products_view(request):
             Q(description__icontains=query)
         )
     
-    # Sorting
+    # Sorting - utiliser price_fcfa au lieu de price
     sort_by = request.GET.get('sort', '-created_at')
+    if sort_by == 'price':
+        sort_by = 'price_fcfa'
+    elif sort_by == '-price':
+        sort_by = '-price_fcfa'
     products = products.order_by(sort_by)
     
     context = {
@@ -99,16 +102,20 @@ def product_type_view(request, product_type):
             Q(description__icontains=query)
         )
     
-    # Filter by price range
+    # Filter by price range (FCFA)
     min_price = request.GET.get('min_price')
     max_price = request.GET.get('max_price')
     if min_price:
-        products = products.filter(price__gte=min_price)
+        products = products.filter(price_fcfa__gte=min_price)
     if max_price:
-        products = products.filter(price__lte=max_price)
+        products = products.filter(price_fcfa__lte=max_price)
     
-    # Sorting
+    # Sorting - utiliser price_fcfa au lieu de price
     sort_by = request.GET.get('sort', '-created_at')
+    if sort_by == 'price':
+        sort_by = 'price_fcfa'
+    elif sort_by == '-price':
+        sort_by = '-price_fcfa'
     products = products.order_by(sort_by)
     
     context = {
@@ -121,7 +128,7 @@ def product_type_view(request, product_type):
     return render(request, 'product_type.html', context)
 
 def product_detail_view(request, product_id):
-    """Product detail page"""
+    """Product detail page with gestion des devises"""
     product = get_object_or_404(Product, id=product_id, is_active=True)
     reviews = product.reviews.all()
     related_products = Product.objects.filter(
@@ -129,43 +136,69 @@ def product_detail_view(request, product_id):
         is_active=True
     ).exclude(id=product_id)[:4]
     
+    # Vérifier si l'utilisateur a déjà donné un avis
+    has_reviewed = False
+    if request.user.is_authenticated:
+        has_reviewed = Review.objects.filter(product=product, user=request.user).exists()
+    
+    # ✅ CORRECTION : Utilisation de la méthode de conversion
+    try:
+        price_eur = product.get_price_in_currency('EUR')
+    except Exception as e:
+        print(f"Erreur de conversion EUR: {e}")
+        price_eur = product.price_fcfa / Decimal('655.957')
+    
     context = {
-        'product': product,
+        'product': product,  # ✅ DOIT ÊTRE ICI
         'reviews': reviews,
         'related_products': related_products,
-        'average_rating': product.rating if product.rating else 0
+        'average_rating': product.rating if product.rating else 0,
+        'has_reviewed': has_reviewed,
+        'review_form': ReviewForm() if request.user.is_authenticated and not has_reviewed else None,
+        'price_eur': price_eur,
+    
     }
     return render(request, 'product_detail.html', context)
 
 def cart_view(request):
-    """Shopping cart page"""
+    """Shopping cart page - Mise à jour pour FCFA"""
     cart_items = request.session.get('cart', {})
-    total_price = Decimal('0')
+    total_price_fcfa = Decimal('0')
     items = []
     
     for product_id, quantity in cart_items.items():
         try:
             product = Product.objects.get(id=product_id)
-            total_price += product.price * quantity
+            item_total_fcfa = product.price_fcfa * Decimal(quantity)
+            total_price_fcfa += item_total_fcfa
             items.append({
                 'product': product,
                 'quantity': quantity,
-                'total': product.price * quantity
+                'total_fcfa': item_total_fcfa,
+                'total': item_total_fcfa  # Compatibilité
             })
         except Product.DoesNotExist:
             pass
     
+    # Calculer la TVA (20%) et le total
+    tax_fcfa = (total_price_fcfa * Decimal('0.20')).quantize(Decimal('0.01'))
+    total_amount_fcfa = total_price_fcfa + tax_fcfa
+    
     context = {
         'cart_items': items,
-        'total_price': total_price,
+        'total_price_fcfa': total_price_fcfa,
+        'total_price': total_price_fcfa,  # Compatibilité
+        'tax_fcfa': tax_fcfa,
+        'total_amount_fcfa': total_amount_fcfa,
         'cart_count': len(cart_items)
     }
     return render(request, 'cart.html', context)
 
+@csrf_exempt
+@require_POST
 def add_to_cart_ajax(request):
     """AJAX endpoint to add product to cart"""
-    if request.method == 'POST':
-        import json
+    try:
         data = json.loads(request.body)
         product_id = data.get('product_id')
         quantity = int(data.get('quantity', 1))
@@ -186,162 +219,264 @@ def add_to_cart_ajax(request):
             request.session['cart'] = cart
             request.session.modified = True
             
+            # Calculer le sous-total pour la réponse
+            item_total_fcfa = product.price_fcfa * quantity
+            
             return JsonResponse({
                 'success': True,
                 'message': f'{product.name} ajouté au panier!',
                 'cart_count': sum(cart.values()),
-                'product_name': product.name
+                'product_name': product.name,
+                'item_total_fcfa': str(item_total_fcfa),
+                'item_total_formatted': f"{item_total_fcfa:,.0f} FCFA".replace(',', ' ')
             })
         except Product.DoesNotExist:
             return JsonResponse({
                 'success': False,
                 'message': 'Produit non trouvé'
             }, status=404)
-    
-    return JsonResponse({'success': False, 'message': 'Requête invalide'}, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'message': f'Erreur: {str(e)}'
+        }, status=400)
 
 def checkout_view(request):
-    """Checkout page - Redirect to payment"""
+    """Checkout page - Mise à jour pour FCFA"""
     cart_items = request.session.get('cart', {})
     
     # Redirect to cart if empty
     if not cart_items:
         return redirect('cart')
     
-    # Calculate cart totals
-    total_price = 0
+    # Calculate cart totals in FCFA
+    total_price_fcfa = Decimal('0')
     items = []
     
     for product_id, quantity in cart_items.items():
         try:
             product = Product.objects.get(id=product_id)
-            item_total = product.price * quantity
-            total_price += item_total
+            item_total_fcfa = product.price_fcfa * Decimal(quantity)
+            total_price_fcfa += item_total_fcfa
             items.append({
                 'product': product,
                 'quantity': quantity,
-                'total': item_total
+                'total_fcfa': item_total_fcfa
             })
         except Product.DoesNotExist:
             pass
     
-    # Determine shipping cost
+    # Determine shipping cost in FCFA
     shipping_method = request.POST.get('shipping', 'standard')
-    shipping_costs = {
+    shipping_costs_fcfa = {
         'standard': Decimal('0'),
-        'express': Decimal('9.99'),
-        'overnight': Decimal('19.99')
+        'express': Decimal('6559.60'),  # 9.99€ → ~6559.60 FCFA
+        'overnight': Decimal('13119.20')  # 19.99€ → ~13119.20 FCFA
     }
-    shipping_cost = shipping_costs.get(shipping_method, Decimal('0'))
+    shipping_cost_fcfa = shipping_costs_fcfa.get(shipping_method, Decimal('0'))
     
     # Calculate tax (20%)
-    tax = (total_price * Decimal('0.20')).quantize(Decimal('0.01'))
-    final_total = (total_price + shipping_cost + tax).quantize(Decimal('0.01'))
+    tax_fcfa = (total_price_fcfa * Decimal('0.20')).quantize(Decimal('0.01'))
+    final_total_fcfa = (total_price_fcfa + shipping_cost_fcfa + tax_fcfa).quantize(Decimal('0.01'))
+    
+    # Get user addresses if authenticated
+    user_addresses = []
+    if request.user.is_authenticated:
+        # Supposant que vous avez un modèle UserAddress lié à l'utilisateur
+        # user_addresses = request.user.addresses.all()
+        pass
     
     context = {
         'cart_items': items,
-        'cart_total': total_price,
-        'shipping_cost': shipping_cost,
-        'tax': tax,
-        'final_total': final_total,
-        'total': final_total,
+        'total_price_fcfa': total_price_fcfa,
+        'shipping_cost_fcfa': shipping_cost_fcfa,
+        'tax_fcfa': tax_fcfa,
+        'final_total_fcfa': final_total_fcfa,
+        'total_amount_fcfa': final_total_fcfa,
+        'user_addresses': user_addresses,
     }
-    return render(request, 'payment.html', context)
+    return render(request, 'checkout.html', context)
 
+@csrf_exempt
+@require_POST
 def process_payment(request):
-    """AJAX endpoint to process payment"""
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            cart_items = request.session.get('cart', {})
+    """AJAX endpoint to process payment - Mise à jour pour FCFA"""
+    try:
+        data = json.loads(request.body)
+        cart_items = request.session.get('cart', {})
+        
+        if not cart_items:
+            return JsonResponse({'success': False, 'message': 'Panier vide'}, status=400)
+        
+        # Calculate totals in FCFA
+        total_price_fcfa = Decimal('0')
+        for product_id, quantity in cart_items.items():
+            try:
+                product = Product.objects.get(id=product_id)
+                total_price_fcfa += product.price_fcfa * Decimal(quantity)
+            except Product.DoesNotExist:
+                pass
+        
+        shipping_method = data.get('shipping_method', 'standard')
+        shipping_costs_fcfa = {
+            'standard': Decimal('0'),
+            'express': Decimal('6559.60'),
+            'overnight': Decimal('13119.20')
+        }
+        shipping_cost_fcfa = shipping_costs_fcfa.get(shipping_method, Decimal('0'))
+        
+        tax_fcfa = (total_price_fcfa * Decimal('0.20')).quantize(Decimal('0.01'))
+        final_total_fcfa = (total_price_fcfa + shipping_cost_fcfa + tax_fcfa).quantize(Decimal('0.01'))
+        
+        # Get address info
+        first_name = data.get('first_name', 'Guest')
+        last_name = data.get('last_name', '')
+        email = data.get('email', '')
+        phone = data.get('phone', '')
+        address = data.get('address', '')
+        city = data.get('city', '')
+        postal_code = data.get('postal_code', '')
+        
+        # Create order with FCFA fields
+        if request.user.is_authenticated:
+            # Récupérer la devise FCFA
+            fcfa_currency = Currency.objects.get(code='XOF')
             
-            if not cart_items:
-                return JsonResponse({'success': False, 'message': 'Panier vide'}, status=400)
+            order = Order.objects.create(
+                user=request.user,
+                total_amount=final_total_fcfa,  # Montant dans la devise d'origine
+                total_amount_fcfa=final_total_fcfa,  # Montant en FCFA
+                shipping_method=shipping_method,
+                status='pending',
+                currency_used=fcfa_currency,
+                shipping_address=f"{address}, {city} {postal_code}",
+                billing_address=f"{address}, {city} {postal_code}",
+                payment_method='card',
+                payment_status='pending'
+            )
             
-            # Calculate totals
-            total_price = Decimal('0')
+            # Add items to order
             for product_id, quantity in cart_items.items():
                 try:
                     product = Product.objects.get(id=product_id)
-                    total_price += product.price * quantity
+                    # Créer OrderItem avec prix FCFA
+                    OrderItem.objects.create(
+                        order=order,
+                        product=product,
+                        quantity=quantity,
+                        price=product.price,  # Prix original
+                        price_fcfa=product.price_fcfa,  # Prix en FCFA
+                        total=product.price * quantity,  # Total original
+                        total_fcfa=product.price_fcfa * quantity  # Total en FCFA
+                    )
                 except Product.DoesNotExist:
                     pass
-            
-            shipping_method = data.get('shipping_method', 'standard')
-            shipping_costs = {
-                'standard': Decimal('0'),
-                'express': Decimal('9.99'),
-                'overnight': Decimal('19.99')
-            }
-            shipping_cost = shipping_costs.get(shipping_method, Decimal('0'))
-            
-            tax = (total_price * Decimal('0.20')).quantize(Decimal('0.01'))
-            final_total = (total_price + shipping_cost + tax).quantize(Decimal('0.01'))
-            
-            # Get address info
-            first_name = data.get('first_name', 'Guest')
-            last_name = data.get('last_name', '')
-            email = data.get('email', '')
-            phone = data.get('phone', '')
-            address = data.get('address', '')
-            city = data.get('city', '')
-            postal_code = data.get('postal_code', '')
-            
-            # Create order
-            if request.user.is_authenticated:
-                order = Order.objects.create(
-                    user=request.user,
-                    total_amount=final_total,
-                    shipping_method=shipping_method,
-                    status='pending'
-                )
-                
-                # Add items to order
-                for product_id, quantity in cart_items.items():
-                    try:
-                        product = Product.objects.get(id=product_id)
-                        # Assuming OrderItem model exists
-                        # OrderItem.objects.create(order=order, product=product, quantity=quantity)
-                    except Product.DoesNotExist:
-                        pass
-            
-            # Clear cart
-            request.session['cart'] = {}
-            request.session.modified = True
-            
-            return JsonResponse({
-                'success': True,
-                'message': 'Commande créée avec succès',
-                'order_id': order.id if request.user.is_authenticated else None,
-                'total': final_total
-            })
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)}, status=400)
-    
-    return JsonResponse({'success': False, 'message': 'Requête invalide'}, status=400)
+        
+        # Clear cart
+        request.session['cart'] = {}
+        request.session.modified = True
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Commande créée avec succès',
+            'order_id': order.id if request.user.is_authenticated else None,
+            'total': str(final_total_fcfa),
+            'total_formatted': f"{final_total_fcfa:,.0f} FCFA".replace(',', ' ')
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=400)
 
 def payment_success_view(request):
     """Payment success page"""
     return render(request, 'payment_success.html')
 
-@login_required(login_url='login')
+## @login_required(login_url='login')
 def account_view(request):
-    """View for user account/profile page"""
-    # Calculate total spent
-    total_spent = 0
+    """View for user account/profile page avec conversion de devise"""
+    # Get user's preferred currency
+    user_currency_code = get_user_currency(request)
+    
+    # Calculate total spent in FCFA
+    total_spent_fcfa = Decimal('0')
+    recent_orders_data = []
+    total_orders_count = 0
+    
     if hasattr(request.user, 'orders'):
-        total_spent = request.user.orders.aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+        total_spent_fcfa = request.user.orders.aggregate(
+            total=Sum('total_amount_fcfa')
+        )['total'] or Decimal('0')
+        
+        # Get recent orders (last 5)
+        recent_orders = request.user.orders.select_related('currency_used').order_by('-created_at')[:5]
+        total_orders_count = request.user.orders.count()
+        
+        # Convert order amounts to user's currency
+        for order in recent_orders:
+            # Get order items for display
+            order_items = order.items.all()
+            
+            # Convert order amount
+            converted_data = CurrencyConverter.convert_price(
+                float(order.total_amount_fcfa),
+                'XOF',  # Base currency is FCFA
+                user_currency_code
+            )
+            
+            recent_orders_data.append({
+                'order': order,
+                'items': order_items,
+                'converted_amount': converted_data['amount'],
+                'formatted_amount': converted_data['formatted'],
+                'currency_symbol': converted_data['symbol'],
+                'status_display': order.get_status_display()
+            })
+    
+    # Convert total spent to user's currency
+    total_spent_converted = CurrencyConverter.convert_price(
+        float(total_spent_fcfa),
+        'XOF',
+        user_currency_code
+    )
+    
+    # Get wishlist count (assuming you have a wishlist model)
+    wishlist_count = 0
+    if hasattr(request.user, 'wishlist_items'):
+        wishlist_count = request.user.wishlist_items.count()
+    
+    # Calculate loyalty points (example: 1 point per 1000 FCFA spent)
+    loyalty_points = int(total_spent_fcfa / Decimal('1000'))
+    
+    # Get all supported currencies for display
+    currencies = CurrencyConverter.SUPPORTED_CURRENCIES
     
     context = {
-        'total_spent': total_spent,
-        'orders_count': request.user.orders.count() if hasattr(request.user, 'orders') else 0,
+        # Total spent
+        'total_spent_fcfa': total_spent_fcfa,
+        'total_spent_converted': total_spent_converted['amount'],
+        'total_spent_formatted': total_spent_converted['formatted'],
+        'currency_symbol': total_spent_converted['symbol'],
+        'currency_code': user_currency_code,
+        
+        # Orders
+        'orders_count': total_orders_count,
+        'recent_orders': recent_orders_data,
+        
+        # Other stats
+        'wishlist_count': wishlist_count,
+        'loyalty_points': loyalty_points,
+        
+        # Currency data
+        'currencies': currencies,
+        'user_currency': user_currency_code,
+        'CURRENCY_SYMBOL': currencies.get(user_currency_code, {}).get('symbol', 'FCFA'),
     }
     return render(request, 'profile.html', context)
 
 def login_view(request):
-    """View for user login with redirect to profile"""
     if request.user.is_authenticated:
-        return redirect('account')
+        if request.user.is_staff:
+            return redirect('core:dashboard')  # ✅ Redirection admin
+        return redirect('core:account')
     
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -354,12 +489,12 @@ def login_view(request):
             
             if user is not None:
                 login(request, user)
-                messages.success(request, f'Welcome {user.first_name or user.username}! 👋')
+                messages.success(request, f'Bienvenue {user.first_name or user.username}! 👋')
                 return redirect(next_url)
             else:
-                messages.error(request, 'Invalid email or password.')
+                messages.error(request, 'Email ou mot de passe invalide.')
         except Exception as e:
-            messages.error(request, 'An error occurred during login.')
+            messages.error(request, 'Une erreur est survenue lors de la connexion.')
     
     # Check if Google OAuth is configured
     try:
@@ -387,17 +522,16 @@ def signup_view(request):
         
         # Validate inputs
         if not email or not password:
-            messages.error(request, 'Email and password are required.')
+            messages.error(request, 'Email et mot de passe sont requis.')
             return render(request, 'signup.html')
         
         if password != password_confirm:
-            messages.error(request, 'Passwords do not match.')
+            messages.error(request, 'Les mots de passe ne correspondent pas.')
             return render(request, 'signup.html')
         
         # Check if user already exists
-        from django.contrib.auth.models import User
         if User.objects.filter(username=email).exists():
-            messages.error(request, 'An account with this email already exists.')
+            messages.error(request, 'Un compte avec cet email existe déjà.')
             return render(request, 'signup.html')
         
         # Create user
@@ -409,10 +543,10 @@ def signup_view(request):
                 first_name=first_name,
                 last_name=last_name
             )
-            messages.success(request, 'Account created successfully! Please log in.')
+            messages.success(request, 'Compte créé avec succès ! Veuillez vous connecter.')
             return redirect('login')
         except Exception as e:
-            messages.error(request, f'Error creating account: {str(e)}')
+            messages.error(request, f'Erreur lors de la création du compte: {str(e)}')
     
     # Check if Google OAuth is configured
     try:
@@ -425,42 +559,40 @@ def signup_view(request):
     }
     return render(request, 'signup.html', context)
 
-@login_required
 def update_currency_preference(request):
-    """Met à jour la préférence de devise de l'utilisateur"""
+    """Update user's currency preference"""
     if request.method == 'POST':
         currency_code = request.POST.get('currency')
         
-        if currency_code not in CurrencyConverter.SUPPORTED_CURRENCIES:
-            messages.error(request, "Devise invalide")
-            return redirect('account')
+        # Codes de devise supportés
+        SUPPORTED_CURRENCIES = ['XOF', 'USD', 'EUR']
         
+        if currency_code not in SUPPORTED_CURRENCIES:
+            messages.error(request, "Devise invalide")
+            return redirect(request.META.get('HTTP_REFERER', 'account'))
+
+        # Pour les utilisateurs anonymes : stocker en session
+        if not request.user.is_authenticated:
+            request.session['preferred_currency'] = currency_code
+            request.session.modified = True
+            messages.success(request, f"Devise mise à jour: {currency_code}")
+            return redirect(request.META.get('HTTP_REFERER', 'home'))
+
+        # Pour les utilisateurs connectés
         try:
-            # Récupérer ou créer l'objet Currency
             currency, _ = Currency.objects.get_or_create(
                 code=currency_code,
-                defaults={
-                    'name': CurrencyConverter.SUPPORTED_CURRENCIES[currency_code]['name'],
-                    'symbol': CurrencyConverter.SUPPORTED_CURRENCIES[currency_code]['symbol'],
-                    'flag': CurrencyConverter.SUPPORTED_CURRENCIES[currency_code]['flag'],
-                    'is_default': CurrencyConverter.SUPPORTED_CURRENCIES[currency_code]['is_default']
-                }
+                defaults={'name': currency_code, 'symbol': currency_code, 'is_default': False}
             )
-            
-            # Mettre à jour ou créer la préférence utilisateur
-            preference, created = UserCurrencyPreference.objects.get_or_create(
-                user=request.user
-            )
+            preference, _ = UserCurrencyPreference.objects.get_or_create(user=request.user)
             preference.preferred_currency = currency
             preference.save()
-            
-            messages.success(request, f"Devise mise à jour: {currency.name}")
-            
+            messages.success(request, f"Devise mise à jour: {currency_code}")
         except Exception as e:
-            messages.error(request, f"Erreur lors de la mise à jour: {str(e)}")
+            messages.error(request, f"Erreur: {str(e)}")
     
-    return redirect('account')
-
+    # Rediriger vers la page précédente ou account
+    return redirect(request.META.get('HTTP_REFERER', 'account'))
 
 def api_exchange_rates(request):
     """API pour récupérer les taux de change en temps réel"""
@@ -477,7 +609,6 @@ def api_exchange_rates(request):
             'success': False,
             'error': str(e)
         }, status=500)
-
 
 def api_convert_price(request):
     """API pour convertir un prix"""
@@ -503,75 +634,338 @@ def api_convert_price(request):
             'error': str(e)
         }, status=400)
 
-
-@login_required
-def account_view(request):
-    """Vue de la page de profil avec gestion des devises"""
-    user_currency = get_user_currency(request.user)
-    
-    # Récupérer les informations sur toutes les devises
-    currencies = []
-    for code, info in CurrencyConverter.SUPPORTED_CURRENCIES.items():
-        currencies.append({
-            'code': code,
-            'name': info['name'],
-            'symbol': info['symbol'],
-            'flag': info['flag'],
-            'is_selected': code == user_currency
-        })
-    
-    context = {
-        'currencies': currencies,
-        'user_currency': user_currency,
-        'user': request.user
-    }
-    
-    return render(request, 'account.html', context)
-
-
 # Context processor pour rendre la devise disponible dans tous les templates
 def currency_context(request):
-    """Ajoute les informations de devise au contexte global"""
-    user_currency = 'XOF'
-    
-    if request.user.is_authenticated:
-        user_currency = get_user_currency(request.user)
+    """Make currency information available in all templates"""
+    user_currency = get_user_currency(request)
+    currencies = CurrencyConverter.SUPPORTED_CURRENCIES
     
     return {
         'user_currency': user_currency,
-        'currencies': CurrencyConverter.SUPPORTED_CURRENCIES,
-        'currency_converter': CurrencyConverter
+        'CURRENCY_SYMBOL': currencies.get(user_currency, {}).get('symbol', 'FCFA'),
+        'CURRENCY_CODE': user_currency,
+        'currencies': currencies,
+        'currency_config': currencies.get(user_currency, {})
     }
-
+    
 @login_required
 def add_review(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
-    
-    # Vérifier si l'utilisateur a déjà donné un avis
-    if Review.objects.filter(product=product, user=request.user).exists():
-        messages.error(request, "Vous avez déjà donné votre avis sur ce produit.")
-        return redirect('product_detail', product_id=product.id)
+    """
+    Ajouter un avis sur un produit - VERSION AVEC AVIS MULTIPLES AUTORISÉS
+    Les utilisateurs peuvent maintenant poster autant d'avis qu'ils le souhaitent
+    """
+    product = get_object_or_404(Product, id=product_id, is_active=True)
     
     if request.method == 'POST':
         form = ReviewForm(request.POST)
         if form.is_valid():
+            # Créer l'avis SANS vérification d'existence préalable
             review = form.save(commit=False)
             review.product = product
             review.user = request.user
-            review.is_verified = True  # À adapter selon ta logique (achat vérifié ?)
+            review.is_verified = True  # À adapter selon votre logique de vérification
             review.save()
-            messages.success(request, "Merci pour votre avis ! Il est maintenant visible.")
-            return redirect('product_detail', product_id=product.id)
-    else:
-        form = ReviewForm()
+            
+            # Mettre à jour la note moyenne du produit
+            reviews = product.reviews.all()
+            if reviews.exists():
+                # Calcul de la moyenne avec Sum (plus précis que Avg pour les Decimal)
+                total_rating = reviews.aggregate(total=Sum('rating'))['total'] or Decimal('0')
+                average_rating = total_rating / reviews.count()
+                product.rating = float(average_rating)  # Convertir en float pour le champ FloatField
+                product.reviews_count = reviews.count()
+                product.save()
+            
+            messages.success(request, "✅ Merci pour votre avis ! Il a été publié avec succès.")
+            return redirect('core:product_detail', product_id=product.id)
+        else:
+            # Gestion des erreurs de formulaire
+            messages.error(request, "❌ Veuillez corriger les erreurs dans le formulaire.")
+            # Renvoyer vers la page produit avec les erreurs
+            return redirect('core:product_detail', product_id=product.id)
     
-    # Pour afficher la page complète avec le formulaire
+    # Pour les requêtes GET, rediriger vers la page produit
+    return redirect('core:product_detail', product_id=product.id)
+
+@login_required
+def dashboard_analytics_view(request):
+    """Analytics dashboard avec insights détaillés - LIÉ AU DASHBOARD PRINCIPAL"""
+    if not request.user.is_staff:
+        return redirect('core:home')
+    
+    # Total clients (tous les utilisateurs)
+    total_customers = User.objects.count()
+    
+    # Nouveaux clients (30 derniers jours)
+    thirty_days_ago = timezone.now() - timezone.timedelta(days=30)
+    new_customers = User.objects.filter(date_joined__gte=thirty_days_ago).count()
+    
+    # Panier moyen (en FCFA)
+    delivered_orders = Order.objects.filter(status='delivered')
+    total_revenue = delivered_orders.aggregate(total=Sum('total_amount_fcfa'))['total'] or Decimal('0.00')
+    total_orders_count = delivered_orders.count()
+    avg_order_value = total_revenue / total_orders_count if total_orders_count > 0 else Decimal('0.00')
+    
+    # Produits mieux notés (top 5)
+    best_rated = Product.objects.filter(
+        is_active=True, 
+        reviews_count__gt=0
+    ).order_by('-rating', '-reviews_count')[:5]
+    
+    # Produits avec le plus d'avis (top 5)
+    most_reviewed = Product.objects.filter(
+        is_active=True
+    ).order_by('-reviews_count')[:5]
+    
+    # KPIs supplémentaires pour cohérence avec le dashboard principal
+    total_revenue_fcfa = Order.objects.filter(status='delivered').aggregate(
+        total=Sum('total_amount_fcfa')
+    )['total'] or Decimal('0.00')
+    
+    today = timezone.now()
+    start_of_month = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    revenue_this_month_fcfa = Order.objects.filter(
+        status='delivered',
+        created_at__gte=start_of_month
+    ).aggregate(total=Sum('total_amount_fcfa'))['total'] or Decimal('0.00')
+    
     context = {
-        'product': product,
-        'reviews': product.reviews.select_related('user').order_by('-created_at'),
-        'review_form': form,
-        'has_reviewed': Review.objects.filter(product=product, user=request.user).exists(),
+        'total_customers': total_customers,
+        'new_customers': new_customers,
+        'avg_order_value': avg_order_value,
+        'best_rated': best_rated,
+        'most_reviewed': most_reviewed,
+        
+        # KPIs pour cohérence avec le dashboard principal
+        'total_revenue_fcfa': total_revenue_fcfa,
+        'revenue_this_month_fcfa': revenue_this_month_fcfa,
+        'total_products': Product.objects.count(),
+        'total_orders': Order.objects.count(),
     }
-    return render(request, 'products/product_detail.html', context)
+    
+    return render(request, 'dashboard_analytics.html', context)
+
+login_required
+def dashboard_view(request):
+    """Dashboard admin avec statistiques en FCFA et graphiques Chart.js"""
+    if not request.user.is_staff:
+        return redirect('core:home')
+    
+    # Calculer les revenus en FCFA
+    total_revenue_fcfa = Order.objects.filter(status='delivered').aggregate(
+        total=Sum('total_amount_fcfa')
+    )['total'] or Decimal('0.00')
+    
+    # Revenu du mois en FCFA
+    today = timezone.now()
+    start_of_month = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    revenue_this_month_fcfa = Order.objects.filter(
+        status='delivered',
+        created_at__gte=start_of_month
+    ).aggregate(total=Sum('total_amount_fcfa'))['total'] or Decimal('0.00')
+    
+    # Commandes récentes avec montants FCFA
+    recent_orders = Order.objects.select_related('user').order_by('-created_at')[:10]
+    
+    # Produits populaires (par nombre d'avis)
+    top_products = Product.objects.filter(is_active=True).annotate(
+    delivered_count=Count('orderitem', filter=Q(orderitem__order__status='delivered'))
+    ).order_by('-reviews_count')[:5]
+    
+    
+    # Commandes par statut
+    orders_by_status = Order.objects.values('status').annotate(
+        count=Count('id')
+    ).order_by('status')
+    
+    total_orders_count = Order.objects.count()
+    
+    # ✅ CORRECTION 1 : Calcul sécurisé du panier moyen (évite division par zéro)
+    avg_order_value = total_revenue_fcfa / Decimal(total_orders_count) if total_orders_count > 0 else Decimal('0.00')
+    
+    # ✅ CORRECTION 2 : Revenus mensuels (6 derniers mois) - SÉCURISÉ
+    monthly_revenue = []
+    monthly_labels = []
+    for i in range(5, -1, -1):
+        month_start = (today.replace(day=1) - timezone.timedelta(days=30*i)).replace(day=1)
+        month_end = (month_start + timezone.timedelta(days=32)).replace(day=1)
+        revenue = Order.objects.filter(
+            status='delivered',
+            created_at__gte=month_start,
+            created_at__lt=month_end
+        ).aggregate(total=Sum('total_amount_fcfa'))['total'] or Decimal('0')
+        monthly_revenue.append(float(revenue))
+        monthly_labels.append(month_start.strftime('%b %Y'))
+    
+    # ✅ CORRECTION 3 : Répartition des commandes par statut - SÉCURISÉ
+    status_data = {'labels': [], 'data': [], 'colors': []}
+    status_colors = {
+        'delivered': '#28a745',
+        'shipped': '#17a2b8',
+        'confirmed': '#ffc107',
+        'pending': '#6c757d',
+        'cancelled': '#dc3545'
+    }
+    status_display_names = dict(Order.STATUS_CHOICES)  # Conversion sécurisée
+    
+    for item in orders_by_status:
+        status = item['status']
+        count = item['count']
+        status_data['labels'].append(status_display_names.get(status, status))
+        status_data['data'].append(count)
+        status_data['colors'].append(status_colors.get(status, '#6c757d'))
+    
+    # ✅ CORRECTION 4 : Top 5 produits les plus vendus - SÉCURISÉ
+    top_selling_products = Product.objects.filter(
+        is_active=True,
+        orderitem__order__status='delivered'
+    ).annotate(
+        total_sold=Sum('orderitem__quantity')
+    ).order_by('-total_sold')[:5]
+    
+    top_products_labels = [p.name for p in top_selling_products]
+    top_products_data = [int(p.total_sold or 0) for p in top_selling_products]
+    
+    # ✅ CORRECTION 5 : KPIs supplémentaires - SÉCURISÉS
+    delivered_orders_this_month = Order.objects.filter(
+        status='delivered',
+        created_at__gte=start_of_month
+    ).count()
+    
+    # Taux de conversion : commandes livrées ce mois / total commandes (éviter division par zéro)
+    conversion_rate = round((delivered_orders_this_month / total_orders_count * 100), 1) if total_orders_count > 0 else 0
+    
+    # Nouveaux clients ce mois
+    new_customers_this_month = User.objects.filter(
+        date_joined__gte=start_of_month
+    ).count()
+    
+    # ✅ CORRECTION 6 : Avis récents (défini mais non utilisé dans le template - gardé pour compatibilité)
+    recent_reviews = Review.objects.select_related('product', 'user').order_by('-created_at')[:5]
+    
+    # ✅ CONTEXTE COMPLET ET SÉCURISÉ
+    context = {
+        # Statistiques de base
+        'total_products': Product.objects.count(),
+        'total_categories': Category.objects.count(),
+        'total_users': User.objects.count(),
+        'total_orders': total_orders_count,
+        'pending_orders': Order.objects.filter(status='pending').count(),
+        'total_revenue_fcfa': total_revenue_fcfa,
+        'revenue_this_month_fcfa': revenue_this_month_fcfa,
+        'recent_orders': recent_orders,
+        'top_products': top_products,
+        'recent_reviews': recent_reviews,  # Maintenu pour compatibilité
+        
+        # Données pour les graphiques Chart.js
+        'monthly_labels': monthly_labels,
+        'monthly_revenue': monthly_revenue,
+        'status_labels': status_data['labels'],
+        'status_data': status_data['data'],
+        'status_colors': status_data['colors'],
+        'top_products_labels': top_products_labels,
+        'top_products_data': top_products_data,
+        
+        # KPIs avancés
+        'avg_order_value': avg_order_value,
+        'delivered_orders_this_month': delivered_orders_this_month,
+        'conversion_rate': conversion_rate,
+        'new_customers_this_month': new_customers_this_month,
+        'positive_reviews_percentage': 87,  # À calculer dynamiquement si nécessaire
+    }
+    
+    return render(request, 'dashboard.html', context)
+
+def api_cart_update(request):
+    """API pour mettre à jour le panier"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            product_id = str(data.get('product_id'))
+            action = data.get('action')  # 'add', 'remove', 'update'
+            quantity = data.get('quantity', 1)
+            
+            cart = request.session.get('cart', {})
+            
+            if action == 'add':
+                cart[product_id] = cart.get(product_id, 0) + quantity
+            elif action == 'remove':
+                if product_id in cart:
+                    del cart[product_id]
+            elif action == 'update':
+                cart[product_id] = max(1, quantity)
+            
+            request.session['cart'] = cart
+            request.session.modified = True
+            
+            # Recalculer les totaux en FCFA
+            total_fcfa = Decimal('0')
+            for pid, qty in cart.items():
+                try:
+                    product = Product.objects.get(id=pid)
+                    total_fcfa += product.price_fcfa * Decimal(qty)
+                except Product.DoesNotExist:
+                    pass
+            
+            tax_fcfa = (total_fcfa * Decimal('0.20')).quantize(Decimal('0.01'))
+            total_with_tax_fcfa = total_fcfa + tax_fcfa
+            
+            return JsonResponse({
+                'success': True,
+                'cart_count': sum(cart.values()),
+                'total_fcfa': str(total_fcfa),
+                'total_formatted': f"{total_fcfa:,.0f} FCFA".replace(',', ' '),
+                'tax_fcfa': str(tax_fcfa),
+                'total_with_tax_fcfa': str(total_with_tax_fcfa),
+                'total_with_tax_formatted': f"{total_with_tax_fcfa:,.0f} FCFA".replace(',', ' ')
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=400)
+    
+    return JsonResponse({'success': False, 'error': 'Méthode non autorisée'}, status=405)
+
+def debug_session(request):
+    """Vue de débogage pour vérifier les sessions"""
+    from django.http import JsonResponse
+    
+    session_info = {
+        'session_id': request.session.session_key,
+        'preferred_currency': request.session.get('preferred_currency'),
+        'all_session_keys': list(request.session.keys()),
+        'user_authenticated': request.user.is_authenticated,
+        'user_id': request.user.id if request.user.is_authenticated else None,
+        'user_currency_from_func': get_user_currency(request),
+    }
+    
+    return JsonResponse(session_info)
 
 
+
+def api_cart_count(request):
+    """
+    API endpoint pour récupérer le nombre d'articles dans le panier
+    """
+    try:
+        cart = request.session.get('cart', {})
+        cart_count = sum(cart.values()) if cart else 0
+        
+        return JsonResponse({
+            'success': True,
+            'count': cart_count
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+        
+from django.contrib.auth.views import LoginView
+
+class CustomLoginView(LoginView):
+    def get_success_url(self):
+        if self.request.user.is_staff:
+            return reverse_lazy('core:dashboard')
+        return super().get_success_url()

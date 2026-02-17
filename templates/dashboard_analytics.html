@@ -1,179 +1,535 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load currency_tags %}
 
 {% block title %}Analytics - Obidon Admin{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<style>
+    /* Reset de base pour cette page spécifique */
+    .admin-page-wrapper {
+        display: flex;
+        justify-content: center; /* Centre horizontalement */
+        align-items: flex-start; /* Commence en haut, mais laisse de la place au header/footer */
+        padding: 40px 20px; /* Marge autour pour ne pas coller aux bords */
+        background: #f8f5f0;
+        min-height: calc(100vh - 72px); /* S'adapte à la hauteur disponible moins le header si nécessaire */
+        box-sizing: border-box;
+    }
+
+    /* Le conteneur principal type "Carte" */
+    .admin-card {
+        display: flex;
+        width: 100%;
+        max-width: 1700px; /* Largeur max moderne */
+        background: white;
+        border-radius: 0px;
+        box-shadow: 0 10px 40px rgba(93, 64, 55, 0.1); /* Ombre douce et pro */
+        overflow: hidden; /* Pour que les coins arrondis fonctionnent */
+        position: relative;
+    }
+    
+    /* Sidebar Moderne */
+    .admin-sidebar {
+        width: 280px; /* Un peu plus large pour le confort */
+        background: linear-gradient(135deg, #5D4037 0%, #4E342E 100%);
+        color: white;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0; /* Empêche la sidebar de rétrécir */
+        position: relative;
+        z-index: 10;
+    }
+
+    /* Zone de scroll indépendante pour la sidebar */
+    .sidebar-scroll-area {
+        flex: 1;
+        overflow-y: auto;
+        padding: 25px 0;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255,255,255,0.3) transparent;
+    }
+
+    /* Style de la scrollbar (Webkit) */
+    .sidebar-scroll-area::-webkit-scrollbar {
+        width: 6px;
+    }
+    .sidebar-scroll-area::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .sidebar-scroll-area::-webkit-scrollbar-thumb {
+        background: rgba(255,255,255,0.2);
+        border-radius: 10px;
+    }
+    .sidebar-scroll-area::-webkit-scrollbar-thumb:hover {
+        background: rgba(255,255,255,0.4);
+    }
+    
+    .sidebar-header {
+        padding: 0 30px 30px;
+        border-bottom: 1px solid rgba(255,255,255,0.15);
+        margin-bottom: 10px;
+        text-align: center;
+    }
+    
+    .sidebar-header h3 {
+        font-size: 1.5rem;
+        margin-bottom: 8px;
+        color: #D4AF37;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+    
+    .sidebar-header p {
+        color: rgba(255,255,255,0.8);
+        font-size: 0.9rem;
+        font-weight: 300;
+    }
+    
+    .sidebar-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 0 20px;
+    }
+    
+    .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 14px 20px;
+        color: rgba(255,255,255,0.85);
+        text-decoration: none;
+        border-radius: 12px;
+        font-weight: 500;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        font-size: 0.95rem;
+    }
+    
+    .nav-item:hover {
+        background: rgba(255,255,255,0.1);
+        color: white;
+        transform: translateX(5px);
+        padding-left: 25px; /* Effet de glissement */
+    }
+    
+    .nav-item.active {
+        background: rgba(212, 175, 55, 0.2);
+        color: #fff;
+        font-weight: 600;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        border-left: 4px solid #D4AF37;
+        padding-left: 16px; /* Compensation du border */
+    }
+    
+    .nav-item i {
+        width: 24px;
+        font-size: 1.1rem;
+        text-align: center;
+        opacity: 0.9;
+    }
+    
+    .sidebar-divider {
+        border: none;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        margin: 20px 20px;
+    }
+    
+    .nav-item.logout {
+        margin-top: 20px;
+        color: #ff8a8a;
+        justify-content: center;
+        background: rgba(255, 107, 107, 0.1);
+    }
+    
+    .nav-item.logout:hover {
+        background: rgba(255, 107, 107, 0.25);
+        color: white;
+        transform: none;
+        padding-left: 20px;
+    }
+    
+    /* Contenu Principal */
+    .admin-main {
+        flex: 1;
+        padding: 40px;
+        background: #faf9f7;
+        overflow-y: auto; /* Scroll indépendant pour le contenu si très long */
+        max-height: 85vh; /* Limite la hauteur pour rester dans la carte */
+    }
+    
+    .admin-header {
+        margin-bottom: 40px;
+        padding-bottom: 25px;
+        border-bottom: 2px solid #e8e0d5;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+    
+    .admin-header h1 {
+        color: #5D4037;
+        font-size: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin: 0;
+    }
+    
+    .admin-header .text-muted {
+        color: #756E66;
+        margin-top: 8px;
+        font-size: 1rem;
+        margin-bottom: 0;
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+        .admin-card {
+            flex-direction: column;
+            max-width: 100%;
+            border-radius: 15px;
+        }
+        
+        .admin-sidebar {
+            width: 100%;
+            height: auto;
+            max-height: 300px; /* Hauteur limitée sur mobile/tablette */
+        }
+        
+        .sidebar-nav {
+            flex-direction: row;
+            overflow-x: auto;
+            padding: 10px 20px;
+            gap: 10px;
+        }
+        
+        .nav-item {
+            white-space: nowrap;
+            padding: 10px 15px;
+            font-size: 0.9rem;
+        }
+        
+        .nav-item:hover {
+            transform: translateY(-2px);
+            padding-left: 20px;
+        }
+        
+        .admin-main {
+            max-height: none;
+            padding: 25px 20px;
+        }
+        
+        .sidebar-header {
+            text-align: left;
+            padding: 20px 30px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .admin-page-wrapper {
+            padding: 15px 10px;
+        }
+        
+        .admin-header h1 {
+            font-size: 1.6rem;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .stats-grid {
+            grid-template-columns: 1fr !important;
+        }
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="admin-container">
-    <!-- Sidebar (même que dashboard.html) -->
-    <aside class="admin-sidebar">
-        <div class="sidebar-header">
-            <h3>Admin Panel</h3>
-            <p>Bienvenue, {{ user.first_name|default:user.username }}</p>
-        </div>
+<!-- Wrapper qui gère le centrage et les marges externes -->
+<div class="admin-page-wrapper">
+    
+    <!-- Carte Principale (Sidebar + Contenu) -->
+    <div class="admin-card">
         
-        <nav class="sidebar-nav">
-            <a href="{% url 'dashboard' %}" class="nav-item">
-                <i class="fas fa-chart-line"></i> Dashboard
-            </a>
-            <a href="{% url 'dashboard_analytics' %}" class="nav-item active">
-                <i class="fas fa-chart-bar"></i> Analytics
-            </a>
-            <a href="/admin/core/product/" class="nav-item">
-                <i class="fas fa-boxes"></i> Produits
-            </a>
-            <a href="/admin/core/category/" class="nav-item">
-                <i class="fas fa-tag"></i> Catégories
-            </a>
-            <a href="/admin/core/order/" class="nav-item">
-                <i class="fas fa-shopping-cart"></i> Commandes
-            </a>
-            <a href="/admin/core/review/" class="nav-item">
-                <i class="fas fa-star"></i> Avis
-            </a>
-            <a href="/admin/auth/user/" class="nav-item">
-                <i class="fas fa-users"></i> Utilisateurs
-            </a>
-            <hr class="sidebar-divider">
-            <a href="/admin/" class="nav-item">
-                <i class="fas fa-cog"></i> Admin Django
-            </a>
-            <a href="{% url 'home' %}" class="nav-item">
-                <i class="fas fa-home"></i> Site
-            </a>
-            <a href="{% url 'account_logout' %}" class="nav-item logout">
-                <i class="fas fa-sign-out-alt"></i> Déconnexion
-            </a>
-        </nav>
-    </aside>
+        <!-- Sidebar Navigation -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-header">
+                <h3>Obidon Admin</h3>
+                <p>Bonjour, {{ user.first_name|default:user.username }}</p>
+            </div>
+            
+            <div class="sidebar-scroll-area">
+                <nav class="sidebar-nav">
+                    <a href="{% url 'core:dashboard' %}" class="nav-item">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                    <a href="{% url 'core:dashboard_analytics' %}" class="nav-item active">
+                        <i class="fas fa-chart-bar"></i> Analytics
+                    </a>
+                    <a href="/admin/core/product/" class="nav-item">
+                        <i class="fas fa-boxes"></i> Produits
+                    </a>
+                    <a href="/admin/core/category/" class="nav-item">
+                        <i class="fas fa-tag"></i> Catégories
+                    </a>
+                    <a href="/admin/core/order/" class="nav-item">
+                        <i class="fas fa-shopping-cart"></i> Commandes
+                    </a>
+                    <a href="/admin/core/review/" class="nav-item">
+                        <i class="fas fa-star"></i> Avis Clients
+                    </a>
+                    <a href="/admin/auth/user/" class="nav-item">
+                        <i class="fas fa-users"></i> Utilisateurs
+                    </a>
+                    
+                    <hr class="sidebar-divider">
+                    
+                    <a href="/admin/" class="nav-item">
+                        <i class="fas fa-cog"></i> Admin Django
+                    </a>
+                    <a href="{% url 'core:home' %}" class="nav-item">
+                        <i class="fas fa-home"></i> Site Public
+                    </a>
+                    
+                    <a href="{% url 'account_logout' %}" class="nav-item logout">
+                        <i class="fas fa-sign-out-alt"></i> Déconnexion
+                    </a>
+                </nav>
+            </div>
+        </aside>
 
-    <!-- Main Content -->
-    <main class="admin-main">
-        <div class="admin-header">
-            <h1>Analytics & Insights</h1>
-            <p class="text-muted">Analyse détaillée de vos performances</p>
-        </div>
-
-        <!-- Key Metrics -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                    <i class="fas fa-users"></i>
+        <!-- Main Content -->
+        <main class="admin-main">
+            <div class="admin-header">
+                <div>
+                    <h1>
+                        <i class="fas fa-chart-line" style="color: #D4AF37;"></i>
+                        Analytics & Insights
+                    </h1>
+                    <p class="text-muted">Analyse détaillée de vos performances commerciales</p>
                 </div>
-                <div class="stat-content">
-                    <h4>Total Clients</h4>
-                    <p class="stat-value">{{ total_customers }}</p>
-                </div>
+                <!-- Optionnel: Bouton d'action rapide -->
+                <button class="btn btn-sm" style="background: white; border: 1px solid #ddd; color: #5D4037; padding: 8px 16px; border-radius: 8px;">
+                    <i class="fas fa-download"></i> Exporter
+                </button>
             </div>
 
-            <div class="stat-card">
-                <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                    <i class="fas fa-user-plus"></i>
-                </div>
-                <div class="stat-content">
-                    <h4>Nouveaux Clients (30j)</h4>
-                    <p class="stat-value">{{ new_customers }}</p>
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                    <i class="fas fa-shopping-bag"></i>
-                </div>
-                <div class="stat-content">
-                    <h4>Panier Moyen</h4>
-                    <p class="stat-value">${{ avg_order_value|floatformat:2 }}</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Best Rated Products -->
-        <div class="dashboard-card">
-            <div class="card-header">
-                <h3>⭐ Produits Mieux Notés</h3>
-            </div>
-            <div class="analytics-list">
-                {% for product in best_rated %}
-                <div class="analytics-item">
-                    <div class="item-info">
-                        <h5>{{ product.name }}</h5>
-                        <p class="text-muted">{{ product.category.name }}</p>
-                    </div>
-                    <div class="item-stats">
-                        <div class="rating">
-                            {% for i in "12345" %}
-                                {% if forloop.counter <= product.rating %}
-                                <i class="fas fa-star" style="color: #ffc107;"></i>
-                                {% else %}
-                                <i class="fas fa-star" style="color: #ddd;"></i>
-                                {% endif %}
-                            {% endfor %}
-                            <span>({{ product.rating }}/5 - {{ product.reviews_count }} avis)</span>
+            <!-- Key Metrics -->
+            <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 25px; margin-bottom: 40px;">
+                <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div>
+                            <h4 style="margin: 0 0 10px 0; opacity: 0.9; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Total Clients</h4>
+                            <p style="font-size: 2.5rem; font-weight: 700; margin: 0;">{{ total_customers }}</p>
                         </div>
-                        <a href="/admin/core/product/{{ product.id }}/change/" class="btn-link">Éditer →</a>
+                        <div style="background: rgba(255,255,255,0.2); padding: 10px; border-radius: 12px;">
+                            <i class="fas fa-users" style="font-size: 1.5rem;"></i>
+                        </div>
                     </div>
+                    <p style="opacity: 0.8; margin-top: 15px; font-size: 0.85rem;">Base clients active</p>
                 </div>
-                {% empty %}
-                <p class="text-muted">Aucun produit évalué</p>
-                {% endfor %}
-            </div>
-        </div>
 
-        <!-- Most Reviewed Products -->
-        <div class="dashboard-card">
-            <div class="card-header">
-                <h3>💬 Produits Mieux Commentés</h3>
-            </div>
-            <div class="analytics-list">
-                {% for product in most_reviewed %}
-                <div class="analytics-item">
-                    <div class="item-info">
-                        <h5>{{ product.name }}</h5>
-                        <p class="text-muted">{{ product.category.name }}</p>
+                <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div>
+                            <h4 style="margin: 0 0 10px 0; opacity: 0.9; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Nouveaux</h4>
+                            <p style="font-size: 2.5rem; font-weight: 700; margin: 0;">{{ new_customers }}</p>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.2); padding: 10px; border-radius: 12px;">
+                            <i class="fas fa-user-plus" style="font-size: 1.5rem;"></i>
+                        </div>
                     </div>
-                    <div class="item-stats">
-                        <span class="badge" style="background: #17a2b8; color: white;">{{ product.reviews.all|length }} avis</span>
-                        <a href="/admin/core/product/{{ product.id }}/change/" class="btn-link">Éditer →</a>
-                    </div>
+                    <p style="opacity: 0.8; margin-top: 15px; font-size: 0.85rem;">30 derniers jours</p>
                 </div>
-                {% empty %}
-                <p class="text-muted">Aucun avis</p>
-                {% endfor %}
-            </div>
-        </div>
 
-        <!-- Performance Tips -->
-        <div class="dashboard-card full-width">
-            <div class="card-header">
-                <h3>📊 Conseils de Performance</h3>
+                <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div>
+                            <h4 style="margin: 0 0 10px 0; opacity: 0.9; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Panier Moyen</h4>
+                            <p style="font-size: 2.5rem; font-weight: 700; margin: 0;">{{ avg_order_value|fcfa }}</p>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.2); padding: 10px; border-radius: 12px;">
+                            <i class="fas fa-shopping-basket" style="font-size: 1.5rem;"></i>
+                        </div>
+                    </div>
+                    <p style="opacity: 0.8; margin-top: 15px; font-size: 0.85rem;">Par commande livrée</p>
+                </div>
+                
+                <div class="stat-card" style="background: linear-gradient(135deg, #5D4037 0%, #4E342E 100%); color: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 15px rgba(93, 64, 55, 0.3);">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div>
+                            <h4 style="margin: 0 0 10px 0; opacity: 0.9; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">CA Mensuel</h4>
+                            <p style="font-size: 2.5rem; font-weight: 700; margin: 0;">{{ revenue_this_month_fcfa|fcfa }}</p>
+                        </div>
+                        <div style="background: rgba(212, 175, 55, 0.2); padding: 10px; border-radius: 12px; color: #D4AF37;">
+                            <i class="fas fa-chart-line" style="font-size: 1.5rem;"></i>
+                        </div>
+                    </div>
+                    <p style="opacity: 0.8; margin-top: 15px; font-size: 0.85rem;">Depuis le 1er du mois</p>
+                </div>
             </div>
-            <div class="tips-grid">
-                <div class="tip-card">
-                    <i class="fas fa-lightbulb" style="color: #ffc107; font-size: 24px;"></i>
-                    <h5>Optimiser le Stock</h5>
-                    <p>Vérifiez régulièrement vos niveaux de stock pour éviter les ruptures.</p>
+
+            <!-- Best Rated Products -->
+            <div class="dashboard-section" style="margin-bottom: 40px;">
+                <div class="section-header" style="margin-bottom: 20px;">
+                    <h2 class="section-title" style="color: #5D4037; font-size: 1.4rem; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-star" style="color: #D4AF37;"></i> Produits Mieux Notés
+                    </h2>
                 </div>
-                <div class="tip-card">
-                    <i class="fas fa-picture-o" style="color: #17a2b8; font-size: 24px;"></i>
-                    <h5>Ajouter des Images</h5>
-                    <p>Les produits avec plusieurs images ont de meilleursprix de conversion.</p>
-                </div>
-                <div class="tip-card">
-                    <i class="fas fa-comments" style="color: #28a745; font-size: 24px;"></i>
-                    <h5>Encourager les Avis</h5>
-                    <p>Les avis clients augmentent la confiance et les ventes.</p>
-                </div>
-                <div class="tip-card">
-                    <i class="fas fa-tags" style="color: #ff6a88; font-size: 24px;"></i>
-                    <h5>Promouvoir les Réductions</h5>
-                    <p>Les produits en promotion augmentent vos ventes saisonnières.</p>
+                <div class="analytics-list">
+                    {% for product in best_rated %}
+                    <div class="analytics-item" style="padding: 20px; border-radius: 16px; background: white; margin-bottom: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid #f0f0f0; transition: all 0.3s ease;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                            <div class="item-info">
+                                <h5 style="color: #5D4037; font-weight: 700; margin-bottom: 5px; font-size: 1.1rem;">{{ product.name }}</h5>
+                                <p class="text-muted" style="color: #888; font-size: 0.9rem; margin: 0;">{{ product.category.name }}</p>
+                            </div>
+                            <div class="item-stats" style="display: flex; justify-content: space-between; align-items: center; gap: 20px; flex: 1; justify-content: flex-end;">
+                                <div class="rating" style="display: flex; align-items: center; gap: 8px; background: #fff8e1; padding: 6px 12px; border-radius: 20px;">
+                                    {% for i in "12345" %}
+                                        <i class="fas fa-star{% if forloop.counter > product.rating %}-o{% endif %}" style="color: {% if forloop.counter <= product.rating %}#D4AF37{% else %}#ddd{% endif %}; font-size: 0.8rem;"></i>
+                                    {% endfor %}
+                                    <span style="margin-left: 8px; font-weight: 700; color: #5D4037; font-size: 0.9rem;">{{ product.rating }}</span>
+                                </div>
+                                <a href="/admin/core/product/{{ product.id }}/change/" class="btn-link" style="color: #5D4037; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: #f5f5f5; border-radius: 8px; transition: background 0.2s;">
+                                    <i class="fas fa-edit"></i> <span style="font-size: 0.9rem;">Éditer</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div style="text-align: center; padding: 40px; background: #fafafa; border-radius: 16px; color: #999; border: 2px dashed #eee;">
+                        <i class="fas fa-star" style="font-size: 40px; color: #ddd; margin-bottom: 15px;"></i>
+                        <p>Aucun produit avec suffisamment d'avis pour le moment.</p>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
-        </div>
-    </main>
+
+            <!-- Most Reviewed Products -->
+            <div class="dashboard-section" style="margin-bottom: 40px;">
+                <div class="section-header" style="margin-bottom: 20px;">
+                    <h2 class="section-title" style="color: #5D4037; font-size: 1.4rem; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-comments" style="color: #17a2b8;"></i> Produits les Plus Commentés
+                    </h2>
+                </div>
+                <div class="analytics-list">
+                    {% for product in most_reviewed %}
+                    <div class="analytics-item" style="padding: 20px; border-radius: 16px; background: white; margin-bottom: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid #f0f0f0; transition: all 0.3s ease;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                            <div class="item-info">
+                                <h5 style="color: #5D4037; font-weight: 700; margin-bottom: 5px; font-size: 1.1rem;">{{ product.name }}</h5>
+                                <p class="text-muted" style="color: #888; font-size: 0.9rem; margin: 0;">{{ product.category.name }}</p>
+                            </div>
+                            <div class="item-stats" style="display: flex; justify-content: space-between; align-items: center; gap: 20px; flex: 1; justify-content: flex-end;">
+                                <span class="badge" style="background: #e0f7fa; color: #006064; padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fas fa-comment-alt"></i> {{ product.reviews_count }} avis
+                                </span>
+                                <a href="/admin/core/product/{{ product.id }}/change/" class="btn-link" style="color: #5D4037; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: #f5f5f5; border-radius: 8px; transition: background 0.2s;">
+                                    <i class="fas fa-edit"></i> <span style="font-size: 0.9rem;">Éditer</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div style="text-align: center; padding: 40px; background: #fafafa; border-radius: 16px; color: #999; border: 2px dashed #eee;">
+                        <i class="fas fa-comments" style="font-size: 40px; color: #ddd; margin-bottom: 15px;"></i>
+                        <p>Aucun avis client enregistré.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Performance Tips -->
+            <div class="dashboard-section">
+                <div class="section-header" style="margin-bottom: 20px;">
+                    <h2 class="section-title" style="color: #5D4037; font-size: 1.4rem; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-lightbulb" style="color: #ffc107;"></i> Recommandations Stratégiques
+                    </h2>
+                </div>
+                <div class="tips-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; margin-top: 20px;">
+                    <div class="tip-card" style="background: white; padding: 30px 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); text-align: center; border-top: 4px solid #D4AF37; transition: transform 0.3s;">
+                        <div style="width: 60px; height: 60px; background: #fff8e1; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                            <i class="fas fa-boxes" style="color: #5D4037; font-size: 24px;"></i>
+                        </div>
+                        <h5 style="color: #5D4037; margin-bottom: 12px; font-weight: 700;">Optimiser le Stock</h5>
+                        <p style="color: #666; line-height: 1.6; font-size: 0.95rem;">Surveillez les niveaux de stock en temps réel pour éviter les ruptures sur les produits populaires.</p>
+                    </div>
+                    <div class="tip-card" style="background: white; padding: 30px 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); text-align: center; border-top: 4px solid #28a745; transition: transform 0.3s;">
+                        <div style="width: 60px; height: 60px; background: #e8f5e9; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                            <i class="fas fa-images" style="color: #28a745; font-size: 24px;"></i>
+                        </div>
+                        <h5 style="color: #5D4037; margin-bottom: 12px; font-weight: 700;">Visibilité</h5>
+                        <p style="color: #666; line-height: 1.6; font-size: 0.95rem;">Ajoutez des images haute qualité et des vidéos pour augmenter le taux de conversion de 35%.</p>
+                    </div>
+                    <div class="tip-card" style="background: white; padding: 30px 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); text-align: center; border-top: 4px solid #17a2b8; transition: transform 0.3s;">
+                        <div style="width: 60px; height: 60px; background: #e0f7fa; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                            <i class="fas fa-comment-dots" style="color: #17a2b8; font-size: 24px;"></i>
+                        </div>
+                        <h5 style="color: #5D4037; margin-bottom: 12px; font-weight: 700;">Encourager les Avis</h5>
+                        <p style="color: #666; line-height: 1.6; font-size: 0.95rem;">Proposez un petit cadeau pour les clients qui laissent un avis vérifié (confiance +48%).</p>
+                    </div>
+                    <div class="tip-card" style="background: white; padding: 30px 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); text-align: center; border-top: 4px solid #ffc107; transition: transform 0.3s;">
+                        <div style="width: 60px; height: 60px; background: #fffde7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                            <i class="fas fa-percentage" style="color: #ffc107; font-size: 24px;"></i>
+                        </div>
+                        <h5 style="color: #5D4037; margin-bottom: 12px; font-weight: 700;">Promotions</h5>
+                        <p style="color: #666; line-height: 1.6; font-size: 0.95rem;">Créez des offres spéciales pour les produits avec >10 avis mais note < 4.2/5.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Lien de retour -->
+            <div style="text-align: center; margin-top: 50px; padding: 30px; background: linear-gradient(to right, #ffffff, #faf9f7); border-radius: 16px; border: 1px solid #eee;">
+                <h3 style="color: #5D4037; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1.3rem;">
+                    <i class="fas fa-arrow-left" style="color: #D4AF37;"></i>
+                    Besoin d'une vue d'ensemble ?
+                </h3>
+                <p style="color: #666; margin-bottom: 25px; max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.6;">
+                    Retournez au dashboard principal pour consulter les graphiques interactifs et les statistiques en temps réel.
+                </p>
+                <a href="{% url 'core:dashboard' %}" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #5D4037 0%, #4E342E 100%); color: white; padding: 12px 30px; border-radius: 50px; font-weight: 600; text-decoration: none; box-shadow: 0 4px 15px rgba(93, 64, 55, 0.3); transition: transform 0.2s, box-shadow 0.2s;">
+                    <i class="fas fa-tachometer-alt"></i> Accéder au Dashboard Principal
+                </a>
+            </div>
+        </main>
+    </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Micro-interactions pour les cartes
+    const analyticsItems = document.querySelectorAll('.analytics-item');
+    analyticsItems.forEach(item => {
+        item.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.boxShadow = '0 12px 30px rgba(0,0,0,0.08)';
+            this.style.borderColor = '#D4AF37';
+        });
+        
+        item.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 4px 20px rgba(0,0,0,0.04)';
+            this.style.borderColor = '#f0f0f0';
+        });
+    });
+    
+    // Animation d'entrée fluide
+    const sections = document.querySelectorAll('.dashboard-section, .stats-grid');
+    sections.forEach((section, index) => {
+        section.style.opacity = '0';
+        section.style.transform = 'translateY(20px)';
+        section.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        
+        setTimeout(() => {
+            section.style.opacity = '1';
+            section.style.transform = 'translateY(0)';
+        }, 100 + (index * 100));
+    });
+});
+</script>
 {% endblock %}

@@ -1,232 +1,813 @@
 {% load static %}
 {% load socialaccount %}
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inscription - Obidon</title>
-    <link rel="stylesheet" href="{% static 'css/login.css' %}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-</head>
-<body>
-    <!-- Top Banner -->
-    <div class="top-banner">
-        <p>10% OFF YOUR FIRST ORDER, SUBSCRIBE TO OUR NEWSLETTER</p>
-    </div>
-
-    <!-- Navbar -->
-    <nav class="navbar">
-        <div class="navbar-left">
-            <a href="/" class="logo">OBIDON</a>
-        </div>
-        <div class="navbar-right">
-            <select class="country-select">
-
-                <option value="XOF">🇹🇬 Togo (FCFA)</option>
-                <option value="USD">🇺🇸 USA (USD $)</option>
-                <option value="EUR">🇪🇺 Europe (EUR €)</option>
-                
-            </select>
-            <a href="#" class="nav-icon"><i class="fas fa-search"></i></a>
-            <a href="{% url 'account' %}" class="nav-icon"><i class="fas fa-user"></i></a>
-            <a href="#" class="nav-icon wishlist"><i class="fas fa-heart"></i></a>
-            <a href="{% url 'cart' %}" class="nav-icon cart"><i class="fas fa-shopping-cart"></i></a>
-        </div>
-    </nav>
-
-    <div class="login-wrapper">
-        <div class="login-container">
-            <h2 class="login-title">SIGN UP</h2>
-            <p class="login-subtitle">Create your account and start shopping</p>
-
-            {% if messages %}
-                <div class="messages">
-                    {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }}">
-                            <i class="fas fa-{% if message.tags == 'error' %}exclamation-circle{% else %}check-circle{% endif %}"></i>
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-
-            <form method="post" class="login-form">
-                {% csrf_token %}
-                
-                <div class="form-row-2">
-                    <div class="form-group">
-                        <input type="text" id="first_name" name="first_name" required placeholder="First name" class="form-input">
-                    </div>
-                    <div class="form-group">
-                        <input type="text" id="last_name" name="last_name" required placeholder="Last name" class="form-input">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <input type="email" id="email" name="email" required placeholder="E-mail" class="form-input">
-                </div>
-
-                <div class="form-group">
-                    <input type="tel" id="phone" name="phone" placeholder="Phone number (optional)" class="form-input">
-                </div>
-
-                <div class="form-group">
-                    <div class="password-wrapper">
-                        <input type="password" id="password" name="password" required placeholder="Password" class="form-input">
-                        <a href="#" class="forgot-password" onclick="togglePasswordVisibility(event)">
-                            <i class="fas fa-eye"></i>
-                        </a>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <div class="password-wrapper">
-                        <input type="password" id="password_confirm" name="password_confirm" required placeholder="Confirm password" class="form-input">
-                        <a href="#" class="forgot-password" onclick="togglePasswordVisibility2(event)">
-                            <i class="fas fa-eye"></i>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Newsletter Checkbox -->
-                <div class="newsletter-checkbox">
-                    <input type="checkbox" id="newsletter" name="newsletter" value="true">
-                    <label for="newsletter">
-                        Subscribe to our newsletter to receive exclusive offers and updates
-                    </label>
-                </div>
-
-                <!-- Terms Checkbox -->
-                <div class="terms-checkbox">
-                    <input type="checkbox" id="terms" name="terms" required>
-                    <label for="terms">
-                        I accept the <a href="#">Terms and Conditions</a> and <a href="#">Privacy Policy</a>
-                    </label>
-                </div>
-
-                <button type="submit" class="btn-login">CREATE ACCOUNT</button>
-            </form>
-
-            {% if google_app %}
-            <div class="divider">
-                <span>Or</span>
-            </div>
-
-            <!-- Social Login -->
-            <div class="social-login">
-                <a href="{% provider_login_url 'google' %}" class="social-btn google">
-                    <i class="fab fa-google"></i> Google
-                </a>
-            </div>
-            {% endif %}
-
-            <!-- Info Cards -->
-            <div class="login-info-section">
-                <div class="info-card">
-                    <div class="info-icon">
-                        <i class="fas fa-truck"></i>
-                    </div>
-                    <h5>Fast Delivery</h5>
-                    <p>Enjoy quick and secure delivery</p>
-                </div>
-
-                <div class="info-card">
-                    <div class="info-icon">
-                        <i class="fas fa-lock"></i>
-                    </div>
-                    <h5>Secure Payment</h5>
-                    <p>Your transactions are safe</p>
-                </div>
-
-                <div class="info-card">
-                    <div class="info-icon">
-                        <i class="fas fa-undo"></i>
-                    </div>
-                    <h5>Free Returns</h5>
-                    <p>30 days to return items</p>
-                </div>
-            </div>
-
-            <p class="signup-text">Already have an account? <a href="{% url 'login' %}" class="signup-link">Sign in</a></p>
-        </div>
-    </div>
-
+    
     <style>
+        /* ===== VARIABLES & RESET ===== */
+        :root {
+            --primary-dark: #5D4037;
+            --primary-medium: #4E342E;
+            --accent-gold: #D4AF37;
+            --accent-gold-light: #E6C97A;
+            --text-dark: #333;
+            --text-light: #666;
+            --bg-light: #F9F9F9;
+            --white: #FFFFFF;
+            --success: #4CAF50;
+            --error: #D32F2F;
+            --border-radius: 12px;
+            --box-shadow: 0 10px 30px rgba(93, 64, 55, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f1ea;
+            /* Motif de fond subtil type "grains de café" ou texture papier */
+            background-image: radial-gradient(#e0d8cc 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: var(--text-dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ===== TOP BANNER ===== */
+        .top-banner {
+            background: linear-gradient(90deg, var(--primary-dark), var(--primary-medium));
+            color: var(--white);
+            text-align: center;
+            padding: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 1001;
+        }
+
+        /* ===== NAVBAR ===== */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 5%;
+            background-color: var(--white);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar-left {
+            display: flex;
+            align-items: center;
+        }
+
+        /* Correction du Logo pour correspondre au style demandé */
+        .logo-img {
+            height: 50px; /* Taille optimale */
+            width: auto;
+            object-fit: contain;
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+
+        .logo-img:hover {
+            transform: scale(1.05);
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .country-select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: var(--white);
+            font-size: 13px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: 'Roboto', sans-serif;
+            outline: none;
+        }
+
+        .country-select:focus {
+            border-color: var(--accent-gold);
+        }
+
+        .nav-icon {
+            color: var(--primary-dark);
+            font-size: 20px;
+            text-decoration: none;
+            padding: 8px;
+            border-radius: 50%;
+            transition: var(--transition);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+        }
+
+        .nav-icon:hover {
+            background-color: #f5f5f5;
+            color: var(--accent-gold);
+            transform: translateY(-2px);
+        }
+
+        .cart .count-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background-color: var(--error);
+            color: var(--white);
+            font-size: 10px;
+            font-weight: 700;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--white);
+        }
+
+        /* ===== MAIN WRAPPER ===== */
+        .signup-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            position: relative;
+        }
+
+        /* Effet de halo doré derrière le formulaire */
+        .signup-wrapper::before {
+            content: '';
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, rgba(255,255,255,0) 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .signup-container {
+            background: var(--white);
+            border-radius: 20px;
+            box-shadow: var(--box-shadow);
+            width: 100%;
+            max-width: 550px;
+            padding: 50px 40px;
+            position: relative;
+            z-index: 1;
+            border-top: 5px solid var(--accent-gold);
+        }
+
+        .signup-header {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .signup-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin-bottom: 10px;
+        }
+
+        .signup-subtitle {
+            color: var(--text-light);
+            font-size: 15px;
+        }
+
+        /* ===== FORM STYLES ===== */
+        .signup-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
         .form-row-2 {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 15px;
         }
 
-        .newsletter-checkbox,
-        .terms-checkbox {
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--primary-dark);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-label i {
+            color: var(--accent-gold);
+            font-size: 12px;
+        }
+
+        .form-input, .password-wrapper {
+            position: relative;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: var(--border-radius);
+            font-size: 15px;
+            transition: var(--transition);
+            background-color: #fafafa;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-gold);
+            background-color: var(--white);
+            box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.1);
+        }
+
+        .password-wrapper .form-input {
+            padding-right: 45px;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #aaa;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            transition: var(--transition);
+        }
+
+        .toggle-password:hover {
+            color: var(--primary-dark);
+        }
+
+        /* ===== CHECKBOXES ===== */
+        .checkbox-group {
             display: flex;
             align-items: flex-start;
-            gap: 10px;
-            margin: 15px 0;
-            font-size: 13px;
-        }
-
-        .newsletter-checkbox input,
-        .terms-checkbox input {
+            gap: 12px;
             margin-top: 5px;
-            cursor: pointer;
         }
 
-        .newsletter-checkbox label,
-        .terms-checkbox label {
+        .checkbox-group input[type="checkbox"] {
+            margin-top: 4px;
+            width: 18px;
+            height: 18px;
             cursor: pointer;
-            color: #666;
+            accent-color: var(--accent-gold);
         }
 
-        .terms-checkbox a {
-            color: #D4AF37;
+        .checkbox-group label {
+            cursor: pointer;
+            color: var(--text-light);
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .checkbox-group a {
+            color: var(--accent-gold);
             text-decoration: none;
+            font-weight: 600;
         }
 
-        .terms-checkbox a:hover {
+        .checkbox-group a:hover {
             text-decoration: underline;
         }
 
-        @media (max-width: 480px) {
+        /* ===== BUTTONS ===== */
+        .btn-submit {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-medium) 100%);
+            color: var(--white);
+            border: none;
+            padding: 16px;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            width: 100%;
+            margin-top: 10px;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(93, 64, 55, 0.3);
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(93, 64, 55, 0.4);
+            background: linear-gradient(135deg, #4a362c 0%, #3e2c25 100%);
+        }
+
+        /* ===== DIVIDER & SOCIAL ===== */
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 30px 0;
+            color: #aaa;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #eee;
+        }
+
+        .divider span {
+            padding: 0 15px;
+            background-color: var(--white);
+        }
+
+        .social-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 14px;
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 15px;
+            transition: var(--transition);
+            border: 1px solid #eee;
+            background-color: var(--white);
+            color: var(--text-dark);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .social-btn.google {
+            color: #DB4437;
+        }
+
+        .social-btn.google:hover {
+            background-color: #fff5f5;
+            border-color: #DB4437;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(219, 68, 55, 0.2);
+        }
+
+        .social-btn i {
+            font-size: 20px;
+        }
+
+        /* ===== INFO CARDS ===== */
+        .info-section {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .info-card {
+            text-align: center;
+            padding: 15px 10px;
+            transition: var(--transition);
+        }
+
+        .info-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .info-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            color: var(--primary-dark);
+            font-size: 20px;
+            box-shadow: 0 4px 10px rgba(212, 175, 55, 0.2);
+        }
+
+        .info-card h5 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin-bottom: 5px;
+        }
+
+        .info-card p {
+            font-size: 12px;
+            color: var(--text-light);
+            line-height: 1.4;
+        }
+
+        /* ===== MESSAGES ===== */
+        .messages {
+            margin-bottom: 20px;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            animation: slideDown 0.4s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .alert-success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .alert-error {
+            background-color: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #ef5350;
+        }
+
+        /* ===== FOOTER LINK ===== */
+        .login-link-text {
+            text-align: center;
+            margin-top: 30px;
+            color: var(--text-light);
+            font-size: 15px;
+        }
+
+        .login-link {
+            color: var(--primary-dark);
+            text-decoration: none;
+            font-weight: 700;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .login-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--accent-gold);
+            transition: var(--transition);
+        }
+
+        .login-link:hover::after {
+            width: 100%;
+        }
+
+        /* ===== FOOTER PAGE ===== */
+        .page-footer {
+            background: var(--primary-dark);
+            color: rgba(255,255,255,0.8);
+            text-align: center;
+            padding: 25px;
+            margin-top: auto;
+            font-size: 13px;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .footer-links a:hover {
+            color: var(--accent-gold);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 15px;
+            }
+            .signup-container {
+                padding: 30px 20px;
+            }
             .form-row-2 {
                 grid-template-columns: 1fr;
             }
+            .info-section {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .info-card {
+                display: flex;
+                align-items: center;
+                text-align: left;
+                gap: 15px;
+                padding: 15px;
+                background: #fff;
+                border-radius: 12px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            }
+            .info-icon {
+                margin: 0;
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+                flex-shrink: 0;
+            }
+            .info-card h5 {
+                margin-bottom: 2px;
+                font-size: 15px;
+            }
+            .info-card p {
+                font-size: 13px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .navbar-right {
+                gap: 10px;
+            }
+            .nav-icon {
+                width: 35px;
+                height: 35px;
+                font-size: 18px;
+            }
+            .country-select {
+                display: none; /* Cache le select sur très petit écran pour gagner de la place */
+            }
+            .signup-title {
+                font-size: 26px;
+            }
         }
     </style>
+</head>
+<body>
+    <!-- Top Banner -->
+    <div class="top-banner">
+        <p><i class="fas fa-gift"></i> 10% DE RÉDUCTION SUR VOTRE PREMIÈRE COMMANDE</p>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="navbar-left">
+            <!-- Lien vers l'accueil avec le logo corrigé -->
+            <a href="{% url 'core:home' %}" class="logo-link">
+                <img src="{% static 'images/logo.jpeg' %}" alt="Obidon Logo" class="logo-img">
+            </a>
+        </div>
+        <div class="navbar-right">
+            <select class="country-select" onchange="this.form.submit()" form="currency-form">
+                <option value="XOF" {% if user_currency == 'XOF' %}selected{% endif %}>🇹🇬 Togo (FCFA)</option>
+                <option value="USD" {% if user_currency == 'USD' %}selected{% endif %}>🇺🇸 USA (USD $)</option>
+                <option value="EUR" {% if user_currency == 'EUR' %}selected{% endif %}>🇪🇺 Europe (EUR €)</option>
+            </select>
+            <a href="#" class="nav-icon"><i class="fas fa-search"></i></a>
+            <a href="{% url 'core:account' %}" class="nav-icon"><i class="fas fa-user"></i></a>
+            <a href="#" class="nav-icon wishlist"><i class="fas fa-heart"></i></a>
+            <a href="{% url 'core:cart' %}" class="nav-icon cart">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="count-badge" id="cartCount">0</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="signup-wrapper">
+        <div class="signup-container">
+            <div class="signup-header">
+                <h2 class="signup-title">CRÉER UN COMPTE</h2>
+                <p class="signup-subtitle">Rejoignez l'univers Obidon dès aujourd'hui</p>
+            </div>
+
+            {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            <i class="fas fa-{% if message.tags == 'error' %}exclamation-circle{% elif message.tags == 'success' %}check-circle{% else %}info-circle{% endif %}"></i>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form method="post" class="signup-form">
+                {% csrf_token %}
+                
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="first_name" class="form-label">
+                            <i class="fas fa-user"></i> Prénom
+                        </label>
+                        <input type="text" id="first_name" name="first_name" required placeholder="Jean" class="form-input" value="{{ request.POST.first_name|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="last_name" class="form-label">
+                            <i class="fas fa-user"></i> Nom
+                        </label>
+                        <input type="text" id="last_name" name="last_name" required placeholder="Dupont" class="form-input" value="{{ request.POST.last_name|default:'' }}">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email" class="form-label">
+                        <i class="fas fa-envelope"></i> Email
+                    </label>
+                    <input type="email" id="email" name="email" required placeholder="jean.dupont@email.com" class="form-input" value="{{ request.POST.email|default:'' }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="phone" class="form-label">
+                        <i class="fas fa-phone"></i> Téléphone <span style="font-weight:400; color:#999; font-size:12px;">(Optionnel)</span>
+                    </label>
+                    <input type="tel" id="phone" name="phone" placeholder="+228 XX XX XX XX" class="form-input" value="{{ request.POST.phone|default:'' }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">
+                        <i class="fas fa-lock"></i> Mot de passe
+                    </label>
+                    <div class="password-wrapper">
+                        <input type="password" id="password" name="password" required placeholder="••••••••" class="form-input">
+                        <button type="button" class="toggle-password" onclick="togglePasswordVisibility('password', this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password_confirm" class="form-label">
+                        <i class="fas fa-lock"></i> Confirmer le mot de passe
+                    </label>
+                    <div class="password-wrapper">
+                        <input type="password" id="password_confirm" name="password_confirm" required placeholder="••••••••" class="form-input">
+                        <button type="button" class="toggle-password" onclick="togglePasswordVisibility('password_confirm', this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Checkboxes -->
+                <div class="checkbox-group">
+                    <input type="checkbox" id="newsletter" name="newsletter" value="true" {% if request.POST.newsletter %}checked{% endif %}>
+                    <label for="newsletter">
+                        Je souhaite recevoir les offres exclusives et nouveautés Obidon.
+                    </label>
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="terms" name="terms" required>
+                    <label for="terms">
+                        J'accepte les <a href="#">Conditions Générales</a> et la <a href="#">Politique de Confidentialité</a>.
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-user-plus"></i> S'INSCRIRE
+                </button>
+            </form>
+
+            {% if google_app or social_providers %}
+            <div class="divider">
+                <span>OU CONTINUER AVEC</span>
+            </div>
+
+            <div class="social-login" style="display: flex; flex-direction: column; gap: 12px;">
+                {% if google_app or social_providers|length > 0 %}
+                    <a href="{% provider_login_url 'google' %}" class="social-btn google">
+                        <i class="fab fa-google"></i> Continuer avec Google
+                    </a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Info Cards (Icons) -->
+            <div class="info-section">
+                <div class="info-card">
+                    <div class="info-icon">
+                        <i class="fas fa-truck-fast"></i>
+                    </div>
+                    <div>
+                        <h5>Livraison Rapide</h5>
+                        <p>24-48h au Togo</p>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon">
+                        <i class="fas fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <h5>Paiement Sécurisé</h5>
+                        <p>SSL 256-bit</p>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon">
+                        <i class="fas fa-gift"></i>
+                    </div>
+                    <div>
+                        <h5>Cadeaux</h5>
+                        <p>Avantages membres</p>
+                    </div>
+                </div>
+            </div>
+
+            <p class="login-link-text">
+                Déjà membre ? <a href="{% url 'core:login' %}" class="login-link">Connectez-vous</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="page-footer">
+        <div class="footer-content">
+            <p>&copy; 2025 Obidon. Tous droits réservés.</p>
+            <div class="footer-links">
+                <a href="{% url 'core:home' %}">Accueil</a>
+                <a href="#">Mentions Légales</a>
+                <a href="#">Contact</a>
+            </div>
+        </div>
+    </footer>
 
     <script>
-        function togglePasswordVisibility(e) {
-            e.preventDefault();
-            const input = document.getElementById('password');
-            const icon = e.target.closest('a').querySelector('i');
+        // Fonction générique pour basculer la visibilité du mot de passe
+        function togglePasswordVisibility(inputId, btnElement) {
+            const input = document.getElementById(inputId);
+            const icon = btnElement.querySelector('i');
+            
             if (input.type === 'password') {
                 input.type = 'text';
                 icon.classList.remove('fa-eye');
                 icon.classList.add('fa-eye-slash');
+                btnElement.style.color = 'var(--accent-gold)';
             } else {
                 input.type = 'password';
                 icon.classList.add('fa-eye');
                 icon.classList.remove('fa-eye-slash');
+                btnElement.style.color = '#aaa';
             }
         }
 
-        function togglePasswordVisibility2(e) {
-            e.preventDefault();
-            const input = document.getElementById('password_confirm');
-            const icon = e.target.closest('a').querySelector('i');
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            } else {
-                input.type = 'password';
-                icon.classList.add('fa-eye');
-                icon.classList.remove('fa-eye-slash');
+        // Mise à jour du panier
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof window.updateCartCount === 'function') {
+                window.updateCartCount();
             }
-        }
+        });
     </script>
 </body>
 </html>

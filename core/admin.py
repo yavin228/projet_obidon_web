@@ -1,284 +1,185 @@
 from django.contrib import admin
-from django.utils.html import format_html
-from .models import Category, Product, ProductImage, Order, OrderItem, Review
-
+from .models import (
+    Category, Currency, ExchangeRate, Product, ProductImage, 
+    Order, OrderItem, Review, UserCurrencyPreference
+)
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ['name', 'is_active', 'product_count', 'created_at']
-    list_filter = ['is_active', 'created_at']
-    search_fields = ['name', 'description']
+    list_display = ['name', 'slug', 'is_active', 'created_at']
+    list_filter = ['is_active']
+    search_fields = ['name']
     prepopulated_fields = {'slug': ('name',)}
-    readonly_fields = ['created_at', 'updated_at']
-
-    fieldsets = (
-        ('Informations générales', {'fields': ('name', 'slug', 'description')}),
-        ('Médias', {'fields': ('image',)}),
-        ('Statut', {'fields': ('is_active',)}),
-        ('Métadonnées', {
-            'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',)
-        }),
-    )
-
-    def product_count(self, obj):
-        count = obj.products.count()
-        return format_html(
-            '<span style="background-color: #417690; color: white; padding: 3px 10px; border-radius: 3px;">{}</span>',
-            count
-        )
-    product_count.short_description = 'Produits'
 
 
-class ProductImageInline(admin.TabularInline):
-    model = ProductImage
-    extra = 1
-    fields = ['image', 'alt_text']
+@admin.register(Currency)
+class CurrencyAdmin(admin.ModelAdmin):
+    list_display = ['code', 'name', 'symbol', 'flag', 'is_default', 'is_active']
+    list_filter = ['is_default', 'is_active']
+    search_fields = ['code', 'name']
+
+
+@admin.register(ExchangeRate)
+class ExchangeRateAdmin(admin.ModelAdmin):
+    list_display = ['base_currency', 'target_currency', 'rate', 'is_active', 'last_updated']
+    list_filter = ['is_active', 'base_currency', 'target_currency']
+    search_fields = ['base_currency__code', 'target_currency__code']
+    readonly_fields = ['last_updated']
 
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = [
-        'name',
-        'category',
-        'product_type_display',
-        'price_display',
-        'has_back_image_display',  # ← NOUVEAU : colonne pour l'image verso
-        'stock_display',
-        'display_stock_badge',
-        'rating_display',
-        'is_featured',
-        'is_active'
-    ]
-    list_filter = [
-        'category',
-        'product_type',
-        'display_stock',
-        'is_featured',
+        'name', 
+        'category', 
+        'product_type', 
+        'price_fcfa_display', 
+        'discount_price_fcfa_display', 
+        'stock', 
+        'is_featured', 
         'is_active',
         'created_at'
     ]
-    search_fields = ['name', 'description', 'category__name']
-    prepopulated_fields = {'slug': ('name',)}
-    readonly_fields = ['created_at', 'updated_at', 'rating', 'reviews_count', 
-                      'image_preview', 'back_image_preview']  # ← AJOUT des aperçus
-    inlines = [ProductImageInline]
-
+    
+    list_filter = ['category', 'is_featured', 'is_active', 'product_type']
+    search_fields = ['name', 'description']
+    readonly_fields = ['rating', 'reviews_count', 'created_at', 'updated_at']  # ✅ 'slug' SUPPRIMÉ
+    
     fieldsets = (
-        ('Informations générales', {
-            'fields': ('name', 'slug', 'category', 'product_type', 'description', 'detailed_description')
+        ('Informations de base', {
+            'fields': ('name', 'category', 'product_type', 'description', 'detailed_description')  # ✅ 'slug' SUPPRIMÉ
         }),
-        ('Pricing', {
-            'fields': ('price', 'discount_price')
+        ('Prix (en FCFA)', {
+            'fields': ('price_fcfa', 'discount_price_fcfa'),
+            'description': "Tous les prix sont en Francs CFA (FCFA). La conversion vers d'autres devises est automatique."
         }),
-        ('Médias', {
-            'fields': ('image', 'image_preview', 'back_image', 'back_image_preview'),
-            'description': "Image: image principale (recto)<br>Image verso: image secondaire qui apparaît au survol"
+        ('Images', {
+            'fields': ('image', 'back_image')
         }),
-        ('Stock et disponibilité', {
-            'fields': ('stock', 'display_stock', 'is_active', 'is_featured')
+        ('Stock et visibilité', {
+            'fields': ('stock', 'display_stock', 'is_featured', 'is_active')
         }),
-        ('Avis', {
-            'fields': ('rating', 'reviews_count'),
-            'classes': ('collapse',)
-        }),
-        ('Métadonnées', {
-            'fields': ('created_at', 'updated_at'),
+        ('Statistiques (lecture seule)', {
+            'fields': ('rating', 'reviews_count', 'created_at', 'updated_at'),
             'classes': ('collapse',)
         }),
     )
-
-    def product_type_display(self, obj):
-        colors = {
-            'cafe': '#8B4513',
-            'pain': '#D2B48C',
-            'machine': '#404040',
-            'accessoire': '#D4AF37'
-        }
-        color = colors.get(obj.product_type, '#000')
-        display = dict(obj.PRODUCT_TYPES).get(obj.product_type, obj.product_type)
-        return format_html(
-            '<span style="background-color: {}; color: white; padding: 3px 8px; border-radius: 3px;">{}</span>',
-            color, display
-        )
-    product_type_display.short_description = 'Type'
-
-    def price_display(self, obj):
-        if obj.discount_price:
-            return format_html(
-                '<span style="text-decoration: line-through;">{}</span> → <span style="color: #D32F2F; font-weight: bold;">{}</span>',
-                f"{obj.price:.2f}", f"{obj.discount_price:.2f}"
-            )
-        return f"{obj.price:.2f}"
-    price_display.short_description = 'Prix'
-
-    def has_back_image_display(self, obj):
-        if obj.back_image:
-            return format_html(
-                '<span style="background-color: #28a745; color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px;">✓</span>'
-            )
-        else:
-            return format_html(
-                '<span style="background-color: #6c757d; color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px;">✗</span>'
-            )
-    has_back_image_display.short_description = 'Image verso ?'
-
-    def stock_display(self, obj):
-        if obj.display_stock:
-            color = '#28a745' if obj.stock > 0 else '#dc3545'
-            text = obj.stock
-        else:
-            color = '#6c757d'
-            text = "Caché"
-        return format_html(
-            '<span style="background-color: {}; color: white; padding: 3px 8px; border-radius: 3px;">{}</span>',
-            color, text
-        )
-    stock_display.short_description = 'Stock'
-
-    def display_stock_badge(self, obj):
-        if obj.display_stock:
-            return format_html(
-                '<span style="background-color: #28a745; color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px;">Oui</span>'
-            )
-        else:
-            return format_html(
-                '<span style="background-color: #dc3545; color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px;">Non</span>'
-            )
-    display_stock_badge.short_description = 'Afficher stock ?'
-
-    def rating_display(self, obj):
-        stars = '⭐' * int(obj.rating or 0)
-        return format_html('{} ({}/5 - {} avis)', stars, obj.rating, obj.reviews_count)
-    rating_display.short_description = 'Évaluation'
-
-    def image_preview(self, obj):
-        if obj.image:
-            return format_html(
-                '<img src="{}" style="max-height: 100px; max-width: 100px; border: 1px solid #ddd; padding: 2px; margin-top: 5px;" />',
-                obj.image.url
-            )
-        return "Pas d'image principale"
-    image_preview.short_description = 'Aperçu recto'
-
-    def back_image_preview(self, obj):
-        if obj.back_image:
-            return format_html(
-                '<img src="{}" style="max-height: 100px; max-width: 100px; border: 1px solid #ddd; padding: 2px; margin-top: 5px;" />',
-                obj.back_image.url
-            )
-        return "Pas d'image verso"
-    back_image_preview.short_description = 'Aperçu verso'
+    
+    # ✅ SUPPRESSION TOTALE de prepopulated_fields (inutile)
+    # prepopulated_fields = {'slug': ('name',)}  # ❌ SUPPRIMÉ
+    
+    # Méthodes d'affichage personnalisées
+    def price_fcfa_display(self, obj):
+        return f"{obj.price_fcfa:,.0f} FCFA".replace(',', ' ')
+    price_fcfa_display.short_description = 'Prix FCFA'
+    price_fcfa_display.admin_order_field = 'price_fcfa'
+    
+    def discount_price_fcfa_display(self, obj):
+        if obj.discount_price_fcfa:
+            return f"{obj.discount_price_fcfa:,.0f} FCFA".replace(',', ' ')
+        return "—"
+    discount_price_fcfa_display.short_description = 'Prix réduit FCFA'
 
 
 @admin.register(ProductImage)
 class ProductImageAdmin(admin.ModelAdmin):
-    list_display = ['alt_text', 'image_preview', 'uploaded_at']
-    search_fields = ['alt_text']
-    readonly_fields = ['image_preview', 'uploaded_at']
-
-    def image_preview(self, obj):
-        if obj.image:
-            return format_html('<img src="{}" style="max-height: 50px; max-width: 50px;" />', obj.image.url)
-        return "No image"
-    image_preview.short_description = 'Aperçu'
-
-
-class OrderItemInline(admin.TabularInline):
-    model = OrderItem
-    extra = 0
-    readonly_fields = ['product', 'quantity', 'price', 'total']
-    can_delete = False
-    fields = ['product', 'quantity', 'price', 'total']
+    list_display = ['product', 'alt_text', 'uploaded_at']
+    list_filter = ['product']
+    search_fields = ['product__name', 'alt_text']
 
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ['order_number', 'user_display', 'status_display', 'total_amount', 'payment_status_display', 'created_at']
-    list_filter = ['status', 'payment_status', 'created_at', 'user']
-    search_fields = ['order_number', 'user__email', 'user__first_name']
-    readonly_fields = ['order_number', 'created_at', 'updated_at', 'shipped_at', 'delivered_at']
-    inlines = [OrderItemInline]
-
+    # ✅ CORRECTION : Utilisation de total_amount_fcfa au lieu de total_amount
+    list_display = [
+        'order_number', 
+        'user', 
+        'total_amount_fcfa_display',
+        'status', 
+        'currency_used', 
+        'created_at'
+    ]
+    
+    list_filter = ['status', 'created_at', 'currency_used']
+    search_fields = ['order_number', 'user__username', 'user__email']
+    readonly_fields = [
+        'order_number', 
+        'total_amount_fcfa', 
+        'tax_amount_fcfa', 
+        'shipping_cost_fcfa',
+        'total_amount_converted',
+        'created_at', 
+        'updated_at'
+    ]
+    
     fieldsets = (
-        ('Informations de la commande', {'fields': ('order_number', 'user', 'status', 'created_at', 'updated_at')}),
-        ('Adresses', {'fields': ('shipping_address', 'billing_address')}),
-        ('Montants', {'fields': ('total_amount', 'tax_amount', 'shipping_cost')}),
-        ('Paiement', {'fields': ('payment_method', 'payment_status')}),
-        ('Livraison', {'fields': ('shipped_at', 'delivered_at')}),
-        ('Notes', {'fields': ('customer_notes', 'admin_notes')}),
+        ('Informations commande', {
+            'fields': ('order_number', 'user', 'status', 'currency_used')
+        }),
+        ('Montants (FCFA)', {  # ✅ Titre explicite
+            'fields': ('total_amount_fcfa', 'tax_amount_fcfa', 'shipping_cost_fcfa', 'total_amount_converted')
+        }),
+        ('Adresses', {
+            'fields': ('shipping_address', 'billing_address')
+        }),
+        ('Paiement', {
+            'fields': ('payment_method', 'payment_status')
+        }),
+        ('Notes', {
+            'fields': ('customer_notes', 'admin_notes')
+        }),
+        ('Dates', {
+            'fields': ('created_at', 'updated_at', 'shipped_at', 'delivered_at'),
+            'classes': ('collapse',)
+        }),
     )
-
-    def user_display(self, obj):
-        return f"{obj.user.first_name} {obj.user.last_name}".strip() or obj.user.email
-    user_display.short_description = 'Client'
-
-    def status_display(self, obj):
-        colors = {
-            'pending': '#ffc107',
-            'confirmed': '#17a2b8',
-            'shipped': '#007bff',
-            'delivered': '#28a745',
-            'cancelled': '#dc3545',
-            'refunded': '#6c757d',
-        }
-        color = colors.get(obj.status, '#000')
-        display = dict(obj.STATUS_CHOICES).get(obj.status, obj.status)
-        return format_html(
-            '<span style="background-color: {}; color: white; padding: 3px 8px; border-radius: 3px;">{}</span>',
-            color, display
-        )
-    status_display.short_description = 'Statut'
-
-    def payment_status_display(self, obj):
-        color = '#28a745' if obj.payment_status == 'completed' else '#ffc107'
-        return format_html(
-            '<span style="background-color: {}; color: white; padding: 3px 8px; border-radius: 3px;">{}</span>',
-            color, obj.payment_status
-        )
-    payment_status_display.short_description = 'Paiement'
+    
+    def total_amount_fcfa_display(self, obj):
+        return f"{obj.total_amount_fcfa:,.0f} FCFA".replace(',', ' ')
+    total_amount_fcfa_display.short_description = 'Total FCFA'
+    total_amount_fcfa_display.admin_order_field = 'total_amount_fcfa'
 
 
 @admin.register(OrderItem)
 class OrderItemAdmin(admin.ModelAdmin):
-    list_display = ['order', 'product', 'quantity', 'price', 'total']
-    list_filter = ['order__created_at', 'order__status']
-    search_fields = ['order__order_number', 'product__name']
-    readonly_fields = ['order', 'product', 'quantity', 'price', 'total']
-
-    def has_add_permission(self, request):
-        return False
+    # ✅ CORRECTION : Utilisation de price_fcfa et total_fcfa
+    list_display = ['order', 'product', 'quantity', 'price_fcfa_display', 'total_fcfa_display']
+    list_filter = ['order']
+    search_fields = ['product__name', 'order__order_number']
+    readonly_fields = ['price_fcfa', 'total_fcfa', 'price_converted', 'total_converted']
+    
+    fieldsets = (
+        ('Informations produit', {
+            'fields': ('order', 'product', 'quantity')
+        }),
+        ('Prix (FCFA)', {  # ✅ Titre explicite
+            'fields': ('price_fcfa', 'total_fcfa')
+        }),
+        ('Prix converti', {
+            'fields': ('price_converted', 'total_converted'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def price_fcfa_display(self, obj):
+        return f"{obj.price_fcfa:,.0f} FCFA".replace(',', ' ')
+    price_fcfa_display.short_description = 'Prix unitaire FCFA'
+    
+    def total_fcfa_display(self, obj):
+        return f"{obj.total_fcfa:,.0f} FCFA".replace(',', ' ')
+    total_fcfa_display.short_description = 'Total FCFA'
 
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
-    list_display = ('product', 'user', 'rating_stars', 'verified_badge', 'created_at')
-    list_filter = ('rating', 'is_verified', 'created_at')
-    search_fields = ('product__name', 'user__username', 'title', 'comment')
-    readonly_fields = ('created_at', 'updated_at')
+    list_display = ['product', 'user', 'rating', 'is_verified', 'created_at']
+    list_filter = ['rating', 'is_verified', 'created_at']
+    search_fields = ['product__name', 'user__username', 'comment']
+    readonly_fields = ['created_at', 'updated_at']
 
-    fieldsets = (
-        ('Informations', {'fields': ('product', 'user', 'is_verified')}),
-        ('Contenu', {'fields': ('rating', 'title', 'comment')}),
-        ('Métadonnées', {
-            'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',)
-        }),
-    )
 
-    def rating_stars(self, obj):
-        stars = "⭐" * int(obj.rating or 0)
-        return format_html(
-            '<span style="font-size:18px;">{}</span> ({}/5)',
-            stars, obj.rating
-        )
-    rating_stars.short_description = 'Évaluation'
-
-    def verified_badge(self, obj):
-        label = "✓ Vérifié" if obj.is_verified else "En attente"
-        color = "#28a745" if obj.is_verified else "#6c757d"
-        return format_html(
-            '<span style="background-color:{}; color:white; padding:3px 8px; border-radius:3px;">{}</span>',
-            color, label
-        )
-    verified_badge.short_description = 'Statut'
+@admin.register(UserCurrencyPreference)
+class UserCurrencyPreferenceAdmin(admin.ModelAdmin):
+    list_display = ['user', 'preferred_currency']
+    search_fields = ['user__username', 'user__email']
+    list_filter = ['preferred_currency']
