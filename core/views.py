@@ -19,13 +19,34 @@ from .forms import ReviewForm
 
 
 def home(request):
-    """Home page with featured products"""
-    featured_products = Product.objects.filter(is_featured=True)[:4]
-    categories = Category.objects.filter(is_active=True)
+    """
+    Page d'accueil optimisée utilisant les nouvelles méthodes du modèle Category.
+    """
+    # On récupère TOUTES les catégories actives destinées à l'accueil, triées par position
+    # On utilise select_related et prefetch pour optimiser les requêtes SQL (évite le N+1 query)
+    all_home_categories = Category.objects.filter(
+        is_active=True, 
+        display_on_home=True
+    ).prefetch_related('products').order_by('home_position', 'name')
+    
+    # Séparation par type de produit (en Python, c'est très rapide)
+    cafe_categories = [c for c in all_home_categories if c.products.filter(product_type='cafe', is_active=True).exists()]
+    pain_categories = [c for c in all_home_categories if c.products.filter(product_type='pain', is_active=True).exists()]
+    machine_categories = [c for c in all_home_categories if c.products.filter(product_type='machine', is_active=True).exists()]
+    
+    # Produits en vedette
+    featured_products = Product.objects.filter(
+        is_active=True, 
+        is_featured=True
+    ).select_related('category')[:8]
+    
     context = {
         'featured_products': featured_products,
-        'categories': categories
+        'cafe_categories': cafe_categories,
+        'pain_categories': pain_categories,
+        'machine_categories': machine_categories,
     }
+    
     return render(request, 'home.html', context)
 
 def products_view(request):

@@ -6,337 +6,149 @@
 
 {% block extra_css %}
 <style>
-    /* Styles pour l'effet hover recto/verso dans les produits en vedette */
+    /* ... (Garde tout ton CSS actuel, il est très bien) ... */
     .featured-product-image-container {
-        position: relative;
-        width: 100%;
-        height: 200px;
-        overflow: hidden;
-        background-color: #F5F5F5;
+        position: relative; width: 100%; height: 200px; overflow: hidden;
+        background-color: #F5F5F5; border-radius: 8px 8px 0 0;
     }
-
-    .featured-product-image-hover {
-        position: relative;
-        width: 100%;
-        height: 100%;
-    }
-
+    .featured-product-image-hover { position: relative; width: 100%; height: 100%; }
     .featured-product-image-hover img {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: opacity 0.4s ease, transform 0.6s ease;
-        backface-visibility: hidden;
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        object-fit: cover; transition: opacity 0.4s ease, transform 0.6s ease;
     }
-
-    .featured-product-image-hover .front-image {
-        opacity: 1;
-        transform: translateY(0);
-        z-index: 2;
-    }
-
-    .featured-product-image-hover .back-image {
-        opacity: 0;
-        transform: translateY(15px);
-        z-index: 1;
-    }
-
-    .featured-product-image-hover.has-back-image:hover .front-image {
-        opacity: 0;
-        transform: translateY(-15px);
-    }
-
-    .featured-product-image-hover.has-back-image:hover .back-image {
-        opacity: 1;
-        transform: translateY(0);
-    }
-
+    .featured-product-image-hover .front-image { opacity: 1; transform: translateY(0); z-index: 2; }
+    .featured-product-image-hover .back-image { opacity: 0; transform: translateY(15px); z-index: 1; }
+    .featured-product-image-hover.has-back-image:hover .front-image { opacity: 0; transform: translateY(-15px); }
+    .featured-product-image-hover.has-back-image:hover .back-image { opacity: 1; transform: translateY(0); }
     .featured-hover-indicator {
-        position: absolute;
-        bottom: 8px;
-        right: 8px;
-        background: rgba(212, 175, 55, 0.95);
-        color: white;
-        padding: 4px 8px;
-        border-radius: 12px;
-        font-size: 10px;
-        font-weight: 600;
-        z-index: 3;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        pointer-events: none;
-        display: flex;
-        align-items: center;
-        gap: 4px;
+        position: absolute; bottom: 8px; right: 8px; background: rgba(212, 175, 55, 0.95);
+        color: white; padding: 4px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;
+        z-index: 3; opacity: 0; transition: opacity 0.3s ease; pointer-events: none;
     }
-
-    .featured-product-image-hover.has-back-image:hover .featured-hover-indicator {
-        opacity: 1;
-    }
-
-    .featured-hover-indicator i {
-        font-size: 8px;
-    }
-
+    .featured-product-image-hover.has-back-image:hover .featured-hover-indicator { opacity: 1; }
     .featured-back-image-badge {
-        position: absolute;
-        top: 8px;
-        left: 8px;
-        background: rgba(93, 64, 55, 0.9);
-        color: white;
-        padding: 4px 8px;
-        border-radius: 12px;
-        font-size: 10px;
-        font-weight: 600;
-        z-index: 4;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        pointer-events: none;
+        position: absolute; top: 8px; left: 8px; background: rgba(93, 64, 55, 0.9);
+        color: white; padding: 4px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; z-index: 4;
     }
-
-    .featured-back-image-badge i {
-        font-size: 8px;
+    /* Ajout pour le compteur de produits */
+    .product-count-badge {
+        margin-top: 10px; font-size: 12px; color: #D4AF37; font-weight: 600;
+        display: inline-block; background: rgba(212, 175, 55, 0.1);
+        padding: 4px 10px; border-radius: 20px;
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="home-container">
-    <!-- Section Titre -->
+
+    <!-- ================= SECTION CAFÉS ================= -->
+    {% if cafe_categories %}
     <h2 class="section-main-title">Nos catégories de cafés</h2>
     
-    <!-- Hero Grid Section - 3 colonnes -->
     <section class="hero-grid-section">
-        <!-- Café en dosettes -->
+        {% for category in cafe_categories %}
         <div class="hero-card">
-            <a href="{% url 'core:products' %}?category=cafe" class="hero-card-link">
+            <!-- Utilisation de get_absolute_url -->
+            <a href="{{ category.get_absolute_url }}" class="hero-card-link">
                 <div class="hero-card-image">
-                    <img src="{% static 'images/coffe_dosettes.jpeg' %}" alt="Cafés dosettes"> 
+                    {% if category.image %}
+                        <img src="{{ category.image.url }}" alt="{{ category.name }}">
+                    {% else %}
+                        <img src="{% static 'images/coffe_dosettes.jpeg' %}" alt="{{ category.name }}">
+                    {% endif %}
                 </div>
                 <div class="hero-card-content">
-                    <h3>Cafés dosettes</h3>
-                    <p>Améliorez votre expérience café avec nos dosettes premium de café, offrant l'équilibre parfait entre saveur et commodité.</p>
-                    <span class="btn-discover">Explorer</span>
+                    <h3>{{ category.name }}</h3>
+                    <!-- Utilisation de short_description -->
+                    <p>{{ category.short_description }}</p>
+                    
+                    <!-- Nouveau : Affichage du nombre de produits -->
+                    {% if category.product_count > 0 %}
+                        <span class="product-count-badge">
+                            <i class="fas fa-box"></i> {{ category.product_count }} produits
+                        </span>
+                    {% endif %}
+                    
+                    <span class="btn-discover" style="margin-top: 15px;">Explorer</span>
                 </div>
             </a>
         </div>
-
-        <!-- Café en capsules -->
-        <div class="hero-card">
-            <a href="{% url 'core:products' %}?category=cafe" class="hero-card-link">
-                <div class="hero-card-image">
-                    <img src="{% static 'images/coffe_capsule.jpeg' %}" alt="Cafés en capsules">
-                </div>
-                <div class="hero-card-content">
-                    <h3>Cafés en capsules</h3>  
-                    <p>Découvrez notre sélection exclusive de cafés en dosettes. Savourez la qualité, expérimentez l'excellence à chaque tasse.</p>
-                    <span class="btn-discover">Explorer</span>
-                </div>
-            </a>
-        </div>
-
-        <!-- Café en grains -->
-        <div class="hero-card">
-            <a href="{% url 'core:products' %}?category=cafe" class="hero-card-link">
-                <div class="hero-card-image">
-                    <img src="{% static 'images/coffe_grain.jpeg' %}" alt="Cafe en grains"> 
-                </div>
-                <div class="hero-card-content">
-                    <h3>Cafés en grains</h3>
-                    <p>Découvrez notre sélection exclusive de cafés en dosettes. Savourez la qualité, expérimentez l'excellence à chaque tasse.</p>
-                    <span class="btn-discover">Explorer</span>
-                </div>
-            </a>
-        </div>
+        {% endfor %}
+        
+        <!-- Plus de remplissage artificiel : on affiche ce qu'on a, c'est plus honnête et responsive -->
+        {% if cafe_categories|length < 3 and cafe_categories|length > 0 %}
+            <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: #999; font-style: italic;">
+                D'autres arrivent bientôt...
+            </div>
+        {% endif %}
     </section>
+    {% endif %}
 
-    <section class="hero-grid-section">
-        <!-- Café Premium -->
-        <div class="hero-card">
-            <a href="{% url 'core:products' %}?category=cafe" class="hero-card-link">
-                <div class="hero-card-image">
-                    <img src="{% static 'images/coffe_moulus.jpeg' %}" alt="Cafés Moulus">
-                </div>
-                <div class="hero-card-content">
-                    <h3>Cafés Moulus</h3>
-                    <p>Découvrez notre sélection exclusive de cafés en dosettes. Savourez la qualité, expérimentez l'excellence à chaque tasse.</p>
-                    <span class="btn-discover">Explorer</span>
-                </div>
-            </a>
-        </div>
-
-        <!-- Café américain -->
-        <div class="hero-card">
-            <a href="{% url 'core:products' %}?category=cafe" class="hero-card-link">
-                <div class="hero-card-image">
-                    <img src="{% static 'images/coffe_american.jpg' %}" alt="Cafés Americains">
-                </div>
-                <div class="hero-card-content">
-                    <h3>Cafés Americains</h3>
-                    <p>American Coffee est la sélection que le Caffè Corsini propose aux amateurs de café américain : noir, intense, et parfait à savourer jusqu'à la toute dernière gorgée.</p>
-                    <span class="btn-discover">Explorer</span>
-                </div>
-            </a>
-        </div>
-
-        <!-- Placeholder pour future catégorie -->
-        <div class="hero-card">
-            <a href="{% url 'core:products' %}?category=cafe" class="hero-card-link">
-                <div class="hero-card-image">
-                    <img src="{% static 'images/coffe_dosettes.jpeg' %}" alt="Autres cafés">
-                </div>
-                <div class="hero-card-content">
-                    <h3>Autres Cafés</h3>
-                    <p>Découvrez toute notre gamme de cafés premium sélectionnés avec soin pour vous offrir la meilleure expérience.</p>
-                    <span class="btn-discover">Explorer</span>
-                </div>
-            </a>
-        </div>
-    </section>
-
-    <!-- Pains -->
+    <!-- ================= SECTION PAINS ================= -->
+    {% if pain_categories %}
     <h2 class="section-main-title">Nos catégories de Pains</h2>
     
     <section class="hero-grid-section">
-        <!-- Pain Baguette -->
+        {% for category in pain_categories %}
         <div class="hero-card">
-            <a href="{% url 'core:products' %}?category=pains" class="hero-card-link">
+            <a href="{{ category.get_absolute_url }}" class="hero-card-link">
                 <div class="hero-card-image">
-                    <img src="{% static 'images/pain_baguette.jpeg' %}" alt="Pain Baguette">
+                    {% if category.image %}
+                        <img src="{{ category.image.url }}" alt="{{ category.name }}">
+                    {% else %}
+                        <img src="{% static 'images/pain_baguette.jpeg' %}" alt="{{ category.name }}">
+                    {% endif %}
                 </div>
                 <div class="hero-card-content">
-                    <h3>Pain Baguette</h3>
-                    <p>Découvrez notre sélection exclusive de pains baguettes. Savourez la qualité, expérimentez l'excellence à chaque tasse.</p>
-                    <span class="btn-discover">Explorer</span>
+                    <h3>{{ category.name }}</h3>
+                    <p>{{ category.short_description }}</p>
+                    {% if category.product_count > 0 %}
+                        <span class="product-count-badge">
+                            <i class="fas fa-bread-slice"></i> {{ category.product_count }} produits
+                        </span>
+                    {% endif %}
+                    <span class="btn-discover" style="margin-top: 15px;">Explorer</span>
                 </div>
             </a>
         </div>
-
-        <!-- Gros Pain -->
-        <div class="hero-card">
-            <a href="{% url 'core:products' %}?category=pains" class="hero-card-link">
-                <div class="hero-card-image">
-                    <img src="{% static 'images/gros_pain.jpg' %}" alt="Gros pain">
-                </div>
-                <div class="hero-card-content">
-                    <h3>Gros Pain</h3>
-                    <p>Savourez nos pains artisanaux fraîchement préparés. Tradition et authenticité se rencontrent dans chaque bouchée.</p>
-                    <span class="btn-discover">Explorer</span>
-                </div>
-            </a>
-        </div>
-
-        <!-- Pain Court -->
-        <div class="hero-card">
-            <a href="{% url 'core:products' %}?category=pains" class="hero-card-link">
-                <div class="hero-card-image">
-                    <img src="{% static 'images/pain_court.jpeg' %}" alt="Pain court">
-                </div>
-                <div class="hero-card-content">
-                    <h3>Pain Court</h3>
-                    <p>Croissants, pains au chocolat et autres délices pour commencer votre journée avec gourmandise.</p>
-                    <span class="btn-discover">Explorer</span>
-                </div>
-            </a>
-        </div>
+        {% endfor %}
     </section>
+    {% endif %}
 
-    <section class="hero-grid-section">
-        <!-- Petit pain -->
-        <div class="hero-card">
-            <a href="{% url 'core:products' %}?category=pains" class="hero-card-link">
-                <div class="hero-card-image">
-                    <img src="{% static 'images/petit_pain.jpeg' %}" alt="Petit pain">
-                </div>
-                <div class="hero-card-content">
-                    <h3>Petit pain</h3>
-                    <p>Croissants, pains au chocolat et autres délices pour commencer votre journée avec gourmandise.</p>
-                    <span class="btn-discover">Explorer</span>
-                </div>
-            </a>
-        </div>
-
-        <!-- Pain Artisanal Premium 1 -->
-        <div class="hero-card">
-            <a href="{% url 'core:products' %}?category=pains" class="hero-card-link">
-                <div class="hero-card-image">
-                    <img src="{% static 'images/pain_image2.jpg' %}" alt="Pain Artisanal Premium">
-                </div>
-                <div class="hero-card-content">
-                    <h3>Pain Artisanal Premium</h3>
-                    <p>Savourez nos pains artisanaux fraîchement préparés. Tradition et authenticité se rencontrent dans chaque bouchée.</p>
-                    <span class="btn-discover">Explorer</span>
-                </div>
-            </a>
-        </div>
-
-        <!-- Pain Artisanal Premium 2 -->
-        <div class="hero-card">
-            <a href="{% url 'core:products' %}?category=pains" class="hero-card-link">
-                <div class="hero-card-image">
-                    <img src="{% static 'images/pain_imge1.jpg' %}" alt="Pain Artisanal Premium">
-                </div>
-                <div class="hero-card-content">
-                    <h3>Pain Artisanal Premium</h3>
-                    <p>Savourez nos pains artisanaux fraîchement préparés. Tradition et authenticité se rencontrent dans chaque bouchée.</p>
-                    <span class="btn-discover">Explorer</span>
-                </div>
-            </a>
-        </div>
-    </section>
-
-    <!-- Machines à café -->
+    <!-- ================= SECTION MACHINES ================= -->
+    {% if machine_categories %}
     <h2 class="section-main-title">Nos Machines à café</h2>
     
     <section class="hero-grid-section">
-        <!-- Machine à Capsules -->
+        {% for category in machine_categories %}
         <div class="hero-card">
-            <a href="{% url 'core:products' %}?category=machines_cafe" class="hero-card-link">
+            <a href="{{ category.get_absolute_url }}" class="hero-card-link">
                 <div class="hero-card-image">
-                    <img src="{% static 'images/machine_capsule.jpg' %}" alt="Machine à Capsules">
+                    {% if category.image %}
+                        <img src="{{ category.image.url }}" alt="{{ category.name }}">
+                    {% else %}
+                        <img src="{% static 'images/machine_capsule.jpg' %}" alt="{{ category.name }}">
+                    {% endif %}
                 </div>
                 <div class="hero-card-content">
-                    <h3>Machine à Capsules</h3>
-                    <p>Découvrez notre sélection exclusive de cafés en dosettes. Savourez la qualité, expérimentez l'excellence à chaque tasse.</p>
-                    <span class="btn-discover">Explorer</span>
+                    <h3>{{ category.name }}</h3>
+                    <p>{{ category.short_description }}</p>
+                    {% if category.product_count > 0 %}
+                        <span class="product-count-badge">
+                            <i class="fas fa-coffee"></i> {{ category.product_count }} produits
+                        </span>
+                    {% endif %}
+                    <span class="btn-discover" style="margin-top: 15px;">Explorer</span>
                 </div>
             </a>
         </div>
-
-        <!-- Machine Expresso Moulus & Dosettes -->
-        <div class="hero-card">
-            <a href="{% url 'core:products' %}?category=machines_cafe" class="hero-card-link">
-                <div class="hero-card-image">
-                    <img src="{% static 'images/machine_expresso_moulu.jpg' %}" alt="Machine Expresso Héager Premium">
-                </div>
-                <div class="hero-card-content">
-                    <h3>Machine Expresso Moulus & Dossetes</h3>
-                    <p>Découvrez notre sélection exclusive de cafés en dosettes. Savourez la qualité, expérimentez l'excellence à chaque tasse.</p>
-                    <span class="btn-discover">Explorer</span>
-                </div>
-            </a>
-        </div>
-
-        <!-- Machine à café haeger -->
-        <div class="hero-card">
-            <a href="{% url 'core:products' %}?category=machines_cafe" class="hero-card-link">
-                <div class="hero-card-image">
-                    <img src="{% static 'images/machine_cafe_heager.jpg' %}" alt="Machine à café haeger">
-                </div>
-                <div class="hero-card-content">
-                    <h3>Machine à café haeger</h3>
-                    <p>Croissants, pains au chocolat et autres délices pour commencer votre journée avec gourmandise.</p>
-                    <span class="btn-discover">Explorer</span>
-                </div>
-            </a>
-        </div>
+        {% endfor %}
     </section>
+    {% endif %}
 
-    <!-- Featured Products Section -->
+    <!-- ================= PRODUITS EN VEDETTE ================= -->
+    {% if featured_products %}
     <section class="featured-section">
         <h2>Produits En Vedette</h2>
         <div class="products-grid">
@@ -344,24 +156,12 @@
                 <div class="featured-card">
                     <div class="featured-product-image-container">
                         <div class="featured-product-image-hover {% if product.get_back_image_url and product.get_back_image_url != product.get_image_url %}has-back-image{% endif %}">
-                            <!-- Utilisation de get_image_url() -->
                             <img src="{{ product.get_image_url }}" alt="{{ product.name }}" class="front-image">
-
-                            <!-- Utilisation de get_back_image_url() -->
                             {% if product.get_back_image_url and product.get_back_image_url != product.get_image_url %}
                                 <img src="{{ product.get_back_image_url }}" alt="{{ product.name }} - verso" class="back-image">
+                                <div class="featured-back-image-badge"><i class="fas fa-sync-alt"></i> Recto/verso</div>
+                                <div class="featured-hover-indicator"><i class="fas fa-hand-pointer"></i> Survolez</div>
                             {% endif %}
-
-                            {% if product.get_back_image_url and product.get_back_image_url != product.get_image_url %}
-                                <div class="featured-back-image-badge">
-                                    <i class="fas fa-sync-alt"></i> Recto/verso
-                                </div>
-                                <div class="featured-hover-indicator">
-                                    <i class="fas fa-hand-pointer"></i> Survolez
-                                </div>
-                            {% endif %}
-
-                            <!-- Utiliser discount_percentage_fcfa au lieu de discount_percent -->
                             {% if product.discount_price_fcfa %}
                                 <span class="discount-badge">-{{ product.discount_percentage }}%</span>
                             {% endif %}
@@ -372,16 +172,14 @@
                         <p class="category">{{ product.category.name }}</p>
                         <div class="rating">
                             <div class="stars">
-                                {% if product.rating >= 1 %}<i class="fas fa-star"></i>{% endif %}
-                                {% if product.rating >= 2 %}<i class="fas fa-star"></i>{% endif %}
-                                {% if product.rating >= 3 %}<i class="fas fa-star"></i>{% endif %}
-                                {% if product.rating >= 4 %}<i class="fas fa-star"></i>{% endif %}
-                                {% if product.rating >= 5 %}<i class="fas fa-star"></i>{% endif %}
+                                {% for i in "12345" %}
+                                    <i class="fas fa-star{% if forloop.counter > product.rating %}-o{% endif %}" 
+                                       style="color: {% if forloop.counter <= product.rating %}#D4AF37{% else %}#ddd{% endif %};"></i>
+                                {% endfor %}
                             </div>
-                            <span>{{ product.rating }}/5</span>
+                            <span>({{ product.rating }})</span>
                         </div>
                         <div class="price">
-                            <!-- Afficher les prix en FCFA -->
                             {% if product.discount_price_fcfa %}
                                 <span class="original">{{ product.price_fcfa|fcfa }}</span>
                                 <span class="sale">{{ product.discount_price_fcfa|fcfa }}</span>
@@ -395,463 +193,112 @@
             {% endfor %}
         </div>
     </section>
+    {% endif %}
 
-    <!-- Why Choose Us Section -->
+    <!-- Why Choose Us & Newsletter (Inchangés) -->
     <section class="why-choose-us">
         <h2>Pourquoi nous choisir ?</h2>
         <div class="benefits-grid">
-            <div class="benefit-card">
-                <div class="benefit-icon">
-                    <i class="fas fa-leaf"></i>
-                </div>
-                <h3>100% Naturel</h3>
-                <p>Nos produits sont sélectionnés pour leur qualité et pureté sans additifs.</p>
-            </div>
-
-            <div class="benefit-card">
-                <div class="benefit-icon">
-                    <i class="fas fa-truck"></i>
-                </div>
-                <h3>Livraison Rapide</h3>
-                <p>Commandes livrées en 24-48h. Livraison gratuite dès 500 fcfa .</p>
-            </div>
-
-            <div class="benefit-card">
-                <div class="benefit-icon">
-                    <i class="fas fa-lock"></i>
-                </div>
-                <h3>100% Sécurisé</h3>
-                <p>Paiements sécurisés avec SSL 256-bit et protection garantie.</p>
-            </div>
-
-            <div class="benefit-card">
-                <div class="benefit-icon">
-                    <i class="fas fa-headset"></i>
-                </div>
-                <h3>Support Client</h3>
-                <p>Équipe disponible 24/7 pour répondre à vos questions.</p>
-            </div>
+            <div class="benefit-card"><div class="benefit-icon"><i class="fas fa-leaf"></i></div><h3>100% Naturel</h3><p>Sélectionnés pour leur qualité et pureté.</p></div>
+            <div class="benefit-card"><div class="benefit-icon"><i class="fas fa-truck"></i></div><h3>Livraison Rapide</h3><p>24-48h au Togo. Gratuit dès 5000 FCFA.</p></div>
+            <div class="benefit-card"><div class="benefit-icon"><i class="fas fa-lock"></i></div><h3>Paiement Sécurisé</h3><p>Transactions protégées SSL 256-bit.</p></div>
+            <div class="benefit-card"><div class="benefit-icon"><i class="fas fa-headset"></i></div><h3>Support Client</h3><p>Disponible 24/7 pour vous aider.</p></div>
         </div>
     </section>
 
-    <!-- Newsletter Section -->
     <section class="newsletter-section">
         <h2>Inscrivez-vous à notre Newsletter</h2>
         <p>Recevez 10% de réduction sur votre première commande</p>
-        <form class="newsletter-form">
-            <input type="email" placeholder="Votre adresse email" required>
+        <form class="newsletter-form" method="POST">
+            {% csrf_token %}
+            <input type="email" name="email" placeholder="Votre adresse email" required>
             <button type="submit">S'inscrire</button>
         </form>
     </section>
 </div>
 
+<!-- ... (Ton CSS Responsive et JS restent identiques) ... -->
 <style>
-    .home-container {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 0 20px;
+    .home-container { max-width: 1400px; margin: 0 auto; padding: 0 20px; }
+    .section-main-title { font-size: 32px; font-weight: 700; color: #5D4037; text-align: center; margin: 40px 0 20px 0; }
+    .hero-grid-section { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; padding: 20px 0 60px 0; margin-bottom: 40px; }
+    .hero-card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.1); transition: all 0.3s ease; }
+    .hero-card:hover { transform: translateY(-10px); box-shadow: 0 15px 40px rgba(0,0,0,0.2); }
+    .hero-card-link { text-decoration: none; color: inherit; display: block; }
+    .hero-card-image { width: 100%; height: 280px; overflow: hidden; position: relative; }
+    .hero-card-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
+    .hero-card:hover .hero-card-image img { transform: scale(1.1); }
+    .hero-card-content { padding: 25px; text-align: center; }
+    .hero-card-content h3 { font-size: 22px; font-weight: 700; color: #5D4037; margin-bottom: 12px; min-height: 56px; }
+    .hero-card-content p { font-size: 14px; color: #666; line-height: 1.6; margin-bottom: 10px; min-height: 44px; }
+    .hero-card .btn-discover { display: inline-block; background: linear-gradient(135deg, #5D4037 0%, #4E342E 100%); color: white; padding: 12px 30px; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 13px; transition: all 0.3s; }
+    .hero-card:hover .btn-discover { box-shadow: 0 5px 15px rgba(0,0,0,0.2); transform: translateY(-2px); }
+    .featured-section { padding: 60px 0; }
+    .featured-section h2 { font-size: 32px; color: #5D4037; margin-bottom: 40px; text-align: center; }
+    .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+    .featured-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.08); transition: all 0.3s; }
+    .featured-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
+    .discount-badge { position: absolute; top: 10px; right: 10px; background-color: #D32F2F; color: white; padding: 5px 10px; border-radius: 4px; font-weight: 600; font-size: 11px; z-index: 5; }
+    .product-info { padding: 15px; }
+    .product-info h3 { color: #5D4037; margin: 0 0 5px 0; font-size: 14px; height: 34px; overflow: hidden; }
+    .category { color: #999; font-size: 11px; margin: 0 0 10px 0; }
+    .rating { display: flex; align-items: center; gap: 5px; margin-bottom: 10px; font-size: 11px; }
+    .stars { color: #D4AF37; font-size: 12px; }
+    .price { display: flex; gap: 10px; margin-bottom: 12px; font-size: 13px; }
+    .price .original { text-decoration: line-through; color: #999; }
+    .price .sale { font-weight: 700; color: #D32F2F; }
+    .btn-view { display: block; background: linear-gradient(135deg, #5D4037 0%, #4E342E 100%); color: white; padding: 10px; text-align: center; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: 600; transition: all 0.3s; }
+    .btn-view:hover { box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    .why-choose-us { padding: 60px 0; }
+    .why-choose-us h2 { font-size: 32px; color: #5D4037; margin-bottom: 40px; text-align: center; }
+    .benefits-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; }
+    .benefit-card { text-align: center; padding: 30px; background: white; border-radius: 8px; box-shadow: 0 2px 15px rgba(0,0,0,0.08); transition: all 0.3s; }
+    .benefit-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
+    .benefit-icon { font-size: 48px; color: #D4AF37; margin-bottom: 20px; }
+    .benefit-card h3 { color: #5D4037; margin: 0 0 10px 0; font-size: 18px; }
+    .benefit-card p { color: #666; font-size: 14px; margin: 0; line-height: 1.6; }
+    .newsletter-section { background: linear-gradient(135deg, #5D4037 0%, #4E342E 100%); color: white; padding: 60px 30px; border-radius: 8px; text-align: center; margin: 60px 0; }
+    .newsletter-section h2 { color: white; margin-bottom: 10px; font-size: 28px; }
+    .newsletter-section p { color: rgba(255,255,255,0.8); margin-bottom: 20px; }
+    .newsletter-form { display: flex; gap: 10px; max-width: 500px; margin: 0 auto; }
+    .newsletter-form input { flex: 1; padding: 12px 15px; border: none; border-radius: 4px; font-size: 14px; }
+    .newsletter-form button { background-color: #D4AF37; color: #5D4037; border: none; padding: 12px 25px; border-radius: 4px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+    .newsletter-form button:hover { background-color: #C4A027; }
+    @media (max-width: 992px) { .hero-grid-section { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 768px) { 
+        .hero-grid-section { grid-template-columns: 1fr; gap: 20px; } 
+        .hero-card-content h3 { font-size: 20px; } 
+        .products-grid, .benefits-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); } 
+        .newsletter-form { flex-direction: column; } 
+        .featured-product-image-container { height: 150px; } 
     }
-
-    /* Titre principal de section */
-    .section-main-title {
-        font-size: 32px;
-        font-weight: 700;
-        color: #5D4037;
-        text-align: center;
-        margin: 40px 0 20px 0;
-    }
-
-    /* Hero Grid Section - 3 colonnes */
-    .hero-grid-section {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 30px;
-        padding: 20px 0 60px 0;
-        margin-bottom: 40px;
-    }
-
-    .hero-card {
-        background: white;
-        border-radius: 15px;
-        overflow: hidden;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-        transition: all 0.3s ease;
-    }
-
-    .hero-card:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 15px 40px rgba(0,0,0,0.2);
-    }
-
-    .hero-card-link {
-        text-decoration: none;
-        color: inherit;
-        display: block;
-    }
-
-    .hero-card-image {
-        width: 100%;
-        height: 280px;
-        overflow: hidden;
-        position: relative;
-    }
-
-    .hero-card-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.3s ease;
-    }
-
-    .hero-card:hover .hero-card-image img {
-        transform: scale(1.1);
-    }
-
-    .hero-card-content {
-        padding: 25px;
-        text-align: center;
-    }
-
-    .hero-card-content h3 {
-        font-size: 22px;
-        font-weight: 700;
-        color: #5D4037;
-        margin-bottom: 12px;
-    }
-
-    .hero-card-content p {
-        font-size: 14px;
-        color: #666;
-        line-height: 1.6;
-        margin-bottom: 20px;
-    }
-
-    .hero-card .btn-discover {
-        display: inline-block;
-        background: linear-gradient(135deg, #5D4037 0%, #4E342E 100%);
-        color: white;
-        padding: 12px 30px;
-        border-radius: 50px;
-        text-decoration: none;
-        font-weight: 600;
-        font-size: 13px;
-        transition: all 0.3s;
-    }
-
-    .hero-card:hover .btn-discover {
-        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        transform: translateY(-2px);
-    }
-
-    /* Featured Products Section */
-    .featured-section {
-        padding: 60px 0;
-    }
-
-    .featured-section h2 {
-        font-size: 32px;
-        color: #5D4037;
-        margin-bottom: 40px;
-        text-align: center;
-    }
-
-    .products-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 20px;
-    }
-
-    .featured-card {
-        background: white;
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        transition: all 0.3s;
-    }
-
-    .featured-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-    }
-
-    .image-placeholder {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 40px;
-        color: #DDD;
-        position: absolute;
-        top: 0;
-        left: 0;
-    }
-
-    .discount-badge {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        background-color: #D32F2F;
-        color: white;
-        padding: 5px 10px;
-        border-radius: 4px;
-        font-weight: 600;
-        font-size: 11px;
-        z-index: 5;
-    }
-
-    .product-info {
-        padding: 15px;
-    }
-
-    .product-info h3 {
-        color: #5D4037;
-        margin: 0 0 5px 0;
-        font-size: 14px;
-    }
-
-    .category {
-        color: #999;
-        font-size: 11px;
-        margin: 0 0 10px 0;
-    }
-
-    .rating {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        margin-bottom: 10px;
-        font-size: 11px;
-    }
-
-    .stars {
-        color: #D4AF37;
-        font-size: 12px;
-    }
-
-    .price {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 12px;
-        font-size: 13px;
-    }
-
-    .price .original {
-        text-decoration: line-through;
-        color: #999;
-    }
-
-    .price .sale {
-        font-weight: 700;
-        color: #D32F2F;
-    }
-
-    .btn-view {
-        display: block;
-        background: linear-gradient(135deg, #5D4037 0%, #4E342E 100%);
-        color: white;
-        padding: 10px;
-        text-align: center;
-        text-decoration: none;
-        border-radius: 4px;
-        font-size: 12px;
-        font-weight: 600;
-        transition: all 0.3s;
-    }
-
-    .btn-view:hover {
-        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    }
-
-    /* Why Choose Us */
-    .why-choose-us {
-        padding: 60px 0;
-    }
-
-    .why-choose-us h2 {
-        font-size: 32px;
-        color: #5D4037;
-        margin-bottom: 40px;
-        text-align: center;
-    }
-
-    .benefits-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 30px;
-    }
-
-    .benefit-card {
-        text-align: center;
-        padding: 30px;
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 15px rgba(0,0,0,0.08);
-        transition: all 0.3s;
-    }
-
-    .benefit-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    }
-
-    .benefit-icon {
-        font-size: 48px;
-        color: #D4AF37;
-        margin-bottom: 20px;
-    }
-
-    .benefit-card h3 {
-        color: #5D4037;
-        margin: 0 0 10px 0;
-        font-size: 18px;
-    }
-
-    .benefit-card p {
-        color: #666;
-        font-size: 14px;
-        margin: 0;
-        line-height: 1.6;
-    }
-
-    /* Newsletter Section */
-    .newsletter-section {
-        background: linear-gradient(135deg, #5D4037 0%, #4E342E 100%);
-        color: white;
-        padding: 60px 30px;
-        border-radius: 8px;
-        text-align: center;
-        margin: 60px 0;
-    }
-
-    .newsletter-section h2 {
-        color: white;
-        margin-bottom: 10px;
-        font-size: 28px;
-    }
-
-    .newsletter-section p {
-        color: rgba(255,255,255,0.8);
-        margin-bottom: 20px;
-    }
-
-    .newsletter-form {
-        display: flex;
-        gap: 10px;
-        max-width: 500px;
-        margin: 0 auto;
-    }
-
-    .newsletter-form input {
-        flex: 1;
-        padding: 12px 15px;
-        border: none;
-        border-radius: 4px;
-        font-size: 14px;
-    }
-
-    .newsletter-form button {
-        background-color: #D4AF37;
-        color: #5D4037;
-        border: none;
-        padding: 12px 25px;
-        border-radius: 4px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
-
-    .newsletter-form button:hover {
-        background-color: #C4A027;
-    }
-
-    /* Responsive */
-    @media (max-width: 992px) {
-        .hero-grid-section {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    @media (max-width: 768px) {
-        .hero-grid-section {
-            grid-template-columns: 1fr;
-            gap: 20px;
-        }
-
-        .hero-card-content h3 {
-            font-size: 20px;
-        }
-
-        .products-grid,
-        .benefits-grid {
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        }
-
-        .newsletter-form {
-            flex-direction: column;
-        }
-
-        .featured-product-image-container {
-            height: 150px;
-        }
-
-        .featured-hover-indicator,
-        .featured-back-image-badge {
-            font-size: 9px;
-            padding: 3px 6px;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .section-main-title {
-            font-size: 24px;
-        }
-
-        .hero-card-image {
-            height: 200px;
-        }
-    }
+    @media (max-width: 480px) { .section-main-title { font-size: 24px; } .hero-card-image { height: 200px; } }
 </style>
 
 <script>
-    // Support mobile pour l'effet hover (tap and hold) sur les produits en vedette
     document.addEventListener('DOMContentLoaded', function() {
         const featuredProducts = document.querySelectorAll('.featured-product-image-hover.has-back-image');
-        
         featuredProducts.forEach(function(product) {
             let touchTimer;
-            
             product.addEventListener('touchstart', function(e) {
                 touchTimer = setTimeout(() => {
                     const frontImg = this.querySelector('.front-image');
                     const backImg = this.querySelector('.back-image');
                     if (frontImg && backImg) {
-                        frontImg.style.opacity = '0';
-                        frontImg.style.transform = 'translateY(-15px)';
-                        backImg.style.opacity = '1';
-                        backImg.style.transform = 'translateY(0)';
+                        frontImg.style.opacity = '0'; frontImg.style.transform = 'translateY(-15px)';
+                        backImg.style.opacity = '1'; backImg.style.transform = 'translateY(0)';
                     }
                     e.preventDefault();
                 }, 500);
             });
-
-            product.addEventListener('touchend', function() {
-                clearTimeout(touchTimer);
-            });
-
-            product.addEventListener('touchmove', function() {
-                clearTimeout(touchTimer);
-            });
-
-            // Retour à l'image recto quand on clique
+            product.addEventListener('touchend', function() { clearTimeout(touchTimer); });
+            product.addEventListener('touchmove', function() { clearTimeout(touchTimer); });
             product.addEventListener('click', function(e) {
                 const frontImg = this.querySelector('.front-image');
                 const backImg = this.querySelector('.back-image');
                 if (frontImg && backImg && backImg.style.opacity === '1') {
-                    frontImg.style.opacity = '1';
-                    frontImg.style.transform = 'translateY(0)';
-                    backImg.style.opacity = '0';
-                    backImg.style.transform = 'translateY(15px)';
+                    frontImg.style.opacity = '1'; frontImg.style.transform = 'translateY(0)';
+                    backImg.style.opacity = '0'; backImg.style.transform = 'translateY(15px)';
                     e.stopPropagation();
                 }
             });

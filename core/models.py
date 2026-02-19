@@ -6,7 +6,9 @@ from django.utils import timezone
 from decimal import Decimal
 
 class Category(models.Model):
-    """Catégorie de produits"""
+    """Catégorie de produits avec gestion hiérarchique et affichage page d'accueil"""
+    
+    # Champs existants
     name = models.CharField(max_length=200, unique=True)
     slug = models.SlugField(unique=True, blank=True)
     description = models.TextField(blank=True)
@@ -15,17 +17,89 @@ class Category(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # Nouveaux champs (déjà ajoutés précédemment)
+    parent = models.ForeignKey(
+        'self', 
+        on_delete=models.CASCADE, 
+        null=True, 
+        blank=True, 
+        related_name='children',
+        verbose_name="Catégorie parente"
+    )
+    
+    display_on_home = models.BooleanField(
+        default=False, 
+        verbose_name="Afficher sur la page d'accueil",
+        help_text="Cochez pour afficher cette catégorie dans la grille d'accueil."
+    )
+    
+    home_position = models.IntegerField(
+        default=0, 
+        verbose_name="Ordre d'affichage",
+        help_text="Plus le chiffre est bas, plus la catégorie apparaît tôt."
+    )
+
     class Meta:
-        ordering = ['name']
+        ordering = ['home_position', 'name']
         verbose_name_plural = 'Categories'
+        indexes = [
+            models.Index(fields=['home_position']),
+            models.Index(fields=['is_active']),
+            models.Index(fields=['display_on_home']),
+        ]
 
     def __str__(self):
+        # Affiche la hiérarchie (ex: Café > Grain)
+        if self.parent:
+            return f"{self.parent.name} > {self.name}"
         return self.name
 
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
+
+    # --- NOUVELLES FONCTIONNALITÉS ---
+
+    def get_absolute_url(self):
+        """Retourne l'URL canonique de la catégorie"""
+        from django.urls import reverse
+        return reverse('core:products') + f'?category={self.slug}'
+
+    @property
+    def product_count(self):
+        """Compte le nombre de produits actifs dans cette catégorie"""
+        return self.products.filter(is_active=True).count()
+
+    @property
+    def has_products(self):
+        """Vérifie si la catégorie contient au moins un produit actif"""
+        return self.products.filter(is_active=True).exists()
+
+    def get_image_url(self):
+        """Retourne l'URL de l'image ou une image par défaut intelligente selon le type"""
+        if self.image and hasattr(self.image, 'url'):
+            return self.image.url
+        
+        # Images par défaut basées sur le premier produit trouvé ou un fallback
+        first_product = self.products.filter(is_active=True, image__isnull=False).first()
+        if first_product:
+            return first_product.image.url
+            
+        # Fallback statique (à adapter selon tes images static)
+        # Note: Dans un template, on préfère souvent gérer le static directement, 
+        # mais ceci est utile pour les API ou pré-rendus.
+        return None 
+
+    @property
+    def short_description(self):
+        """Retourne les 20 premiers mots de la description"""
+        if self.description:
+            words = self.description.split()
+            if len(words) > 20:
+                return ' '.join(words[:20]) + '...'
+            return self.description
+        return "Découvrez notre sélection exclusive de qualité supérieure."
 
 
 class Currency(models.Model):
@@ -134,7 +208,7 @@ class Product(models.Model):
     description = models.TextField()
     detailed_description = models.TextField(blank=True)
     
-    # PRIX PRINCIPAL EN FCFA (devise par défaut) - CORRIGÉ
+    # PRIX PRINCIPAL EN FCFA (devise par défaut)
     price_fcfa = models.DecimalField(
         max_digits=12, 
         decimal_places=2, 
@@ -207,65 +281,49 @@ class Product(models.Model):
         return None
     
     def get_price_in_currency(self, currency_code='XOF'):
-        """
-        Retourne le prix dans la devise spécifiée
-        Utilise les taux de change pour la conversion
-        """
+        """Retourne le prix dans la devise spécifiée"""
         if currency_code == 'XOF':
             return self.price_fcfa
-        
-        # Convertir depuis FCFA vers la devise demandée
         return ExchangeRate.convert(self.price_fcfa, 'XOF', currency_code)
     
     def get_discount_price_in_currency(self, currency_code='XOF'):
-        """
-        Retourne le prix réduit dans la devise spécifiée
-        """
+        """Retourne le prix réduit dans la devise spécifiée"""
         if not self.discount_price_fcfa:
             return None
-        
         if currency_code == 'XOF':
             return self.discount_price_fcfa
-        
         return ExchangeRate.convert(self.discount_price_fcfa, 'XOF', currency_code)
 
     @property
     def price(self):
-        """Alias pour le prix en FCFA (rétrocompatibilité)"""
         return self.price_fcfa
 
     @property
     def discount_price(self):
-        """Alias pour le prix réduit en FCFA (rétrocompatibilité)"""
         return self.discount_price_fcfa
 
     @property
     def get_price(self):
-        """Retourne le prix réduit s'il existe, sinon le prix normal (en FCFA)"""
         return self.discount_price_fcfa if self.discount_price_fcfa else self.price_fcfa
 
     @property
     def discount_percentage(self):
-        """Calcule le pourcentage de réduction basé sur les prix FCFA"""
         if self.discount_price_fcfa and self.price_fcfa:
             return round(((self.price_fcfa - self.discount_price_fcfa) / self.price_fcfa) * 100)
         return 0
     
     @property
     def has_back_image(self):
-        """Vérifie si le produit a une image verso"""
         return bool(self.back_image)
     
     def get_price_display(self, currency_code='XOF', format_type='simple'):
         """Retourne le prix formaté dans la devise spécifiée"""
-        # Obtenir le symbole de la devise
         try:
             currency = Currency.objects.get(code=currency_code)
             symbol = currency.symbol
         except Currency.DoesNotExist:
             symbol = 'FCFA' if currency_code == 'XOF' else currency_code
         
-        # Obtenir le prix
         price = self.get_price_in_currency(currency_code)
         discount_price = self.get_discount_price_in_currency(currency_code)
         
@@ -300,7 +358,6 @@ class ProductImage(models.Model):
         return f"Image - {self.alt_text or 'Product Gallery'}"
     
     def get_image_url(self):
-        """Retourne l'URL de l'image de galerie ou un placeholder si vide"""
         if self.image and hasattr(self.image, 'url'):
             return self.image.url
         return "https://via.placeholder.com/100?text=Galerie"
@@ -321,7 +378,6 @@ class Order(models.Model):
     order_number = models.CharField(max_length=50, unique=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     
-    # MONTANTS PRINCIPAUX EN FCFA (devise par défaut) - CORRIGÉ
     total_amount_fcfa = models.DecimalField(
         max_digits=12, 
         decimal_places=2,
@@ -341,7 +397,6 @@ class Order(models.Model):
         verbose_name="Frais de livraison en FCFA"
     )
     
-    # Devise utilisée pour la commande
     currency_used = models.ForeignKey(
         Currency, 
         on_delete=models.SET_NULL, 
@@ -350,7 +405,6 @@ class Order(models.Model):
         related_name='orders'
     )
     
-    # Montants convertis (pour référence)
     total_amount_converted = models.DecimalField(
         max_digits=12, 
         decimal_places=2,
@@ -379,13 +433,10 @@ class Order(models.Model):
         return f"Commande {self.order_number}"
     
     def save(self, *args, **kwargs):
-        # Si currency_used n'est pas spécifié, utiliser FCFA par défaut
         if not self.currency_used:
             self.currency_used = Currency.get_default()
         
-        # Si la devise utilisée n'est pas FCFA, convertir les montants
         if self.currency_used and self.currency_used.code != 'XOF':
-            # Convertir de FCFA vers la devise utilisée
             self.total_amount_converted = ExchangeRate.convert(
                 self.total_amount_fcfa, 'XOF', self.currency_used.code
             )
@@ -396,7 +447,6 @@ class Order(models.Model):
     
     @property
     def total_amount(self):
-        """Alias pour rétrocompatibilité"""
         return self.total_amount_fcfa
 
 
@@ -406,7 +456,6 @@ class OrderItem(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.IntegerField(validators=[MinValueValidator(1)])
     
-    # PRIX EN FCFA (devise principale) - CORRIGÉ
     price_fcfa = models.DecimalField(
         max_digits=12, 
         decimal_places=2,
@@ -418,7 +467,6 @@ class OrderItem(models.Model):
         verbose_name="Total en FCFA"
     )
     
-    # Prix converti (pour référence)
     price_converted = models.DecimalField(
         max_digits=12, 
         decimal_places=2,
@@ -436,12 +484,9 @@ class OrderItem(models.Model):
         return f"{self.quantity}x {self.product.name}"
     
     def save(self, *args, **kwargs):
-        """Calculer automatiquement les totaux en FCFA"""
-        # Utiliser le prix FCFA du produit
         self.price_fcfa = self.product.price_fcfa
         self.total_fcfa = self.price_fcfa * self.quantity
         
-        # Si la commande a une devise différente de FCFA, convertir
         if self.order.currency_used and self.order.currency_used.code != 'XOF':
             self.price_converted = ExchangeRate.convert(
                 self.price_fcfa, 'XOF', self.order.currency_used.code
@@ -457,12 +502,10 @@ class OrderItem(models.Model):
     
     @property
     def price(self):
-        """Alias pour rétrocompatibilité"""
         return self.price_fcfa
     
     @property
     def total(self):
-        """Alias pour rétrocompatibilité"""
         return self.total_fcfa
 
 
@@ -479,10 +522,6 @@ class Review(models.Model):
 
     class Meta:
         ordering = ['-created_at']
-        # ✅ SUPPRESSION CRITIQUE : Contrainte UNIQUE supprimée pour autoriser les avis multiples
-        # unique_together = ['product', 'user']  # ❌ LIGNE SUPPRIMÉE
-        
-        # ✅ AJOUT OPTIONNEL : Index pour performances (recommandé)
         indexes = [
             models.Index(fields=['product', '-created_at']),
             models.Index(fields=['user', '-created_at']),
@@ -490,7 +529,6 @@ class Review(models.Model):
 
     def __str__(self):
         return f"Avis de {self.user.username} - {self.product.name}"
-
 
 
 class UserCurrencyPreference(models.Model):
