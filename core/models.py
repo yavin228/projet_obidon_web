@@ -5,10 +5,50 @@ from django.utils.text import slugify
 from django.utils import timezone
 from decimal import Decimal
 
+# ==============================================================================
+# NOUVEAU MODÈLE : GESTION DYNAMIQUE DES TYPES DE PRODUITS
+# ==============================================================================
+
+class ProductType(models.Model):
+    """
+    Modèle dynamique pour gérer les types de produits.
+    Remplace l'ancienne liste statique PRODUCT_TYPES.
+    Permet à l'admin de créer de nouveaux types (ex: Thés, Chocolats) sans coder.
+    """
+    name = models.CharField(max_length=100, unique=True, verbose_name="Nom du type")
+    slug = models.SlugField(unique=True, blank=True, help_text="Identifiant URL (généré automatiquement)")
+    icon = models.CharField(
+        max_length=50, 
+        default='fa-box',
+        verbose_name="Icône FontAwesome",
+        help_text="Ex: fa-coffee, fa-bread-slice, fa-leaf (sans le préfixe 'fas')"
+    )
+    description = models.TextField(blank=True, verbose_name="Description courte")
+    is_active = models.BooleanField(default=True, verbose_name="Actif")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Type de produit"
+        verbose_name_plural = "Types de produits"
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+
+# ==============================================================================
+# CATÉGORIES
+# ==============================================================================
+
 class Category(models.Model):
     """Catégorie de produits avec gestion hiérarchique et affichage page d'accueil"""
     
-    # Champs existants
+    # Champs de base
     name = models.CharField(max_length=200, unique=True)
     slug = models.SlugField(unique=True, blank=True)
     description = models.TextField(blank=True)
@@ -17,7 +57,7 @@ class Category(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    # Nouveaux champs (déjà ajoutés précédemment)
+    # Hiérarchie
     parent = models.ForeignKey(
         'self', 
         on_delete=models.CASCADE, 
@@ -27,6 +67,7 @@ class Category(models.Model):
         verbose_name="Catégorie parente"
     )
     
+    # Affichage Page d'Accueil
     display_on_home = models.BooleanField(
         default=False, 
         verbose_name="Afficher sur la page d'accueil",
@@ -39,6 +80,34 @@ class Category(models.Model):
         help_text="Plus le chiffre est bas, plus la catégorie apparaît tôt."
     )
 
+    # --- NOUVEAUX CHAMPS POUR LES FILTRES DYNAMIQUES ---
+    ICON_CHOICES = [
+        ('fa-coffee', '☕ Café'),
+        ('fa-bread-slice', '🍞 Pain'),
+        ('fa-mug-hot', '☕ Tasse/Machine'),
+        ('fa-blender', '🌪 Mixeur'),
+        ('fa-utensils', '🍴 Accessoires'),
+        ('fa-wine-bottle', '🍷 Boissons'),
+        ('fa-cookie', '🍪 Snacks'),
+        ('fa-leaf', '🌿 Thé/Infusion'),
+        ('fa-box-open', '📦 Général'),
+        ('fa-th-large', '🔲 Tous'),
+    ]
+    
+    icon = models.CharField(
+        max_length=50, 
+        choices=ICON_CHOICES, 
+        default='fa-box-open',
+        verbose_name="Icône du filtre",
+        help_text="Icône affichée dans la barre de navigation supérieure."
+    )
+    
+    is_filter_main = models.BooleanField(
+        default=False,
+        verbose_name="Afficher dans la barre de filtres ?",
+        help_text="Si coché, cette catégorie apparaîtra dans la barre de navigation supérieure."
+    )
+
     class Meta:
         ordering = ['home_position', 'name']
         verbose_name_plural = 'Categories'
@@ -46,10 +115,10 @@ class Category(models.Model):
             models.Index(fields=['home_position']),
             models.Index(fields=['is_active']),
             models.Index(fields=['display_on_home']),
+            models.Index(fields=['is_filter_main']),
         ]
 
     def __str__(self):
-        # Affiche la hiérarchie (ex: Café > Grain)
         if self.parent:
             return f"{self.parent.name} > {self.name}"
         return self.name
@@ -59,7 +128,7 @@ class Category(models.Model):
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
 
-    # --- NOUVELLES FONCTIONNALITÉS ---
+    # --- MÉTHODES UTILITAIRES ---
 
     def get_absolute_url(self):
         """Retourne l'URL canonique de la catégorie"""
@@ -77,18 +146,12 @@ class Category(models.Model):
         return self.products.filter(is_active=True).exists()
 
     def get_image_url(self):
-        """Retourne l'URL de l'image ou une image par défaut intelligente selon le type"""
+        """Retourne l'URL de l'image ou une image par défaut"""
         if self.image and hasattr(self.image, 'url'):
             return self.image.url
-        
-        # Images par défaut basées sur le premier produit trouvé ou un fallback
         first_product = self.products.filter(is_active=True, image__isnull=False).first()
         if first_product:
             return first_product.image.url
-            
-        # Fallback statique (à adapter selon tes images static)
-        # Note: Dans un template, on préfère souvent gérer le static directement, 
-        # mais ceci est utile pour les API ou pré-rendus.
         return None 
 
     @property
@@ -100,7 +163,16 @@ class Category(models.Model):
                 return ' '.join(words[:20]) + '...'
             return self.description
         return "Découvrez notre sélection exclusive de qualité supérieure."
+    
+    @property
+    def icon_class(self):
+        """Retourne la classe CSS complète pour l'icône"""
+        return f"fas {self.icon}"
 
+
+# ==============================================================================
+# DEVISES & TAUX DE CHANGE
+# ==============================================================================
 
 class Currency(models.Model):
     """Modèle pour stocker les devises disponibles"""
@@ -165,13 +237,8 @@ class ExchangeRate(models.Model):
     
     @classmethod
     def convert(cls, amount, from_currency_code, to_currency_code):
-        """
-        Convertit un montant d'une devise à une autre
-        Retourne le montant converti ou le montant original si conversion impossible
-        """
         if from_currency_code == to_currency_code:
             return amount
-        
         try:
             rate = cls.objects.get(
                 base_currency__code=from_currency_code,
@@ -180,7 +247,6 @@ class ExchangeRate(models.Model):
             )
             return amount * rate.rate
         except cls.DoesNotExist:
-            # Si taux introuvable, essayer la conversion inverse
             try:
                 inverse_rate = cls.objects.get(
                     base_currency__code=to_currency_code,
@@ -189,26 +255,34 @@ class ExchangeRate(models.Model):
                 )
                 return amount / inverse_rate.rate
             except cls.DoesNotExist:
-                return amount  # Fallback: retourner le montant original
+                return amount
 
+
+# ==============================================================================
+# PRODUITS
+# ==============================================================================
 
 class Product(models.Model):
     """Produit du site - FCFA comme devise principale"""
-    PRODUCT_TYPES = [
-        ('cafe', 'Café'),
-        ('pain', 'Pain'),
-        ('machine', 'Machine à café'),
-        ('accessoire', 'Accessoire'),
-    ]
-
+    
+    # ❌ L'ancienne liste statique est supprimée car remplacée par le modèle ProductType
+    
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
-    product_type = models.CharField(max_length=50, choices=PRODUCT_TYPES)
+    
+    # ✅ NOUVEAU : Relation dynamique vers ProductType
+    product_type = models.ForeignKey(
+        ProductType, 
+        on_delete=models.PROTECT, # Empêche la suppression si des produits existent
+        related_name='products',
+        verbose_name="Type de produit"
+    )
+    
     description = models.TextField()
     detailed_description = models.TextField(blank=True)
     
-    # PRIX PRINCIPAL EN FCFA (devise par défaut)
+    # PRIX EN FCFA
     price_fcfa = models.DecimalField(
         max_digits=12, 
         decimal_places=2, 
@@ -269,25 +343,21 @@ class Product(models.Model):
         super().save(*args, **kwargs)
     
     def get_image_url(self):
-        """Retourne l'URL de l'image ou un placeholder si vide"""
         if self.image and hasattr(self.image, 'url'):
             return self.image.url
         return "https://via.placeholder.com/600x400?text=Image+non+disponible"
     
     def get_back_image_url(self):
-        """Retourne l'URL de l'image verso ou None si vide"""
         if self.back_image and hasattr(self.back_image, 'url'):
             return self.back_image.url
         return None
     
     def get_price_in_currency(self, currency_code='XOF'):
-        """Retourne le prix dans la devise spécifiée"""
         if currency_code == 'XOF':
             return self.price_fcfa
         return ExchangeRate.convert(self.price_fcfa, 'XOF', currency_code)
     
     def get_discount_price_in_currency(self, currency_code='XOF'):
-        """Retourne le prix réduit dans la devise spécifiée"""
         if not self.discount_price_fcfa:
             return None
         if currency_code == 'XOF':
@@ -317,7 +387,6 @@ class Product(models.Model):
         return bool(self.back_image)
     
     def get_price_display(self, currency_code='XOF', format_type='simple'):
-        """Retourne le prix formaté dans la devise spécifiée"""
         try:
             currency = Currency.objects.get(code=currency_code)
             symbol = currency.symbol
@@ -331,21 +400,19 @@ class Product(models.Model):
             if discount_price:
                 return f"{discount_price:,.0f} {symbol}".replace(',', ' ')
             return f"{price:,.0f} {symbol}".replace(',', ' ')
-        
         elif format_type == 'full':
             if discount_price:
                 return f"""
-                <span style="text-decoration: line-through; color: #999;">
-                    {price:,.0f} {symbol}
-                </span>
-                <span style="color: #D32F2F; font-weight: bold;">
-                    {discount_price:,.0f} {symbol}
-                </span>
+                <span style="text-decoration: line-through; color: #999;">{price:,.0f} {symbol}</span>
+                <span style="color: #D32F2F; font-weight: bold;">{discount_price:,.0f} {symbol}</span>
                 """
             return f"{price:,.0f} {symbol}".replace(',', ' ')
-        
         return f"{price:,.0f} {symbol}".replace(',', ' ')
 
+
+# ==============================================================================
+# AUTRES MODÈLES (Galerie, Commandes, Avis...)
+# ==============================================================================
 
 class ProductImage(models.Model):
     """Images supplémentaires pour les produits"""
@@ -510,7 +577,7 @@ class OrderItem(models.Model):
 
 
 class Review(models.Model):
-    """Avis client - VERSION CORRIGÉE POUR AVIS MULTIPLES"""
+    """Avis client"""
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
     rating = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])

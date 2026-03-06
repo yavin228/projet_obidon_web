@@ -1,5 +1,7 @@
 # context_processors.py
 from core.currency_service import CurrencyConverter
+from .models import Category
+
 
 def currency_context(request):
     """Injecte le contexte de devise dans tous les templates"""
@@ -45,4 +47,18 @@ def currency_context(request):
             'is_fcfa_currency': True,
         }
         
-        
+        # core/context_processors.py
+
+def global_filters(request):
+    """
+    Rend les catégories principales disponibles dans TOUS les templates.
+    """
+    # Récupère toutes les catégories actives cochées "is_filter_main"
+    all_filters = Category.objects.filter(
+        is_active=True, 
+        is_filter_main=True
+    ).order_by('home_position', 'name')
+    
+    return {
+        'all_filters': all_filters
+    }

@@ -1,11 +1,10 @@
 {% load static %}
 {% load currency_tags %}
 
-
 <!-- NAVBAR PRINCIPALE -->
 <nav class="navbar">
     <div class="navbar-container">
-        <!-- Logo et nom -->
+        <!-- Logo -->
         <div class="navbar-brand">
             <a href="{% url 'core:home' %}" class="logo-link">
                 <div class="logo-container">
@@ -14,7 +13,7 @@
             </a>
         </div>
 
-        <!-- Adresse avec dropdown -->
+        <!-- Adresse -->
         <div class="navbar-address">
             <div class="address-trigger">
                 <i class="fas fa-map-marker-alt"></i>
@@ -24,85 +23,41 @@
                 </div>
                 <i class="fas fa-chevron-down"></i>
             </div>
-            <div class="address-dropdown">
-                <input type="text" placeholder="Changer l'adresse...">
-                <button class="btn-confirm">Confirmer</button>
-            </div>
         </div>
 
-        <!-- Barre de recherche -->
+        <!-- Recherche -->
         <div class="navbar-search">
             <form class="search-form" method="get" action="{% url 'core:products' %}">
-                <select class="search-category" name="type">
-                    <option value="">Toutes catégories</option>
-                    <option value="cafe">Cafés</option>
-                    <option value="pain">Pains</option>
-                    <option value="machine">Machines à café</option>
-                    <option value="accessoire">Accessoires</option>
-                </select>
-                <input type="text" class="search-input" name="q" placeholder="Rechercher des produits...">
+                <input type="text" class="search-input" name="q" placeholder="Rechercher un produit..." value="{{ request.GET.q }}">
                 <button type="submit" class="search-btn">
                     <i class="fas fa-search"></i>
                 </button>
             </form>
         </div>
 
-        <!-- Langue de connexion -->
-        <div class="navbar-language">
-            <select class="language-select">
-                <option value="fr">Français</option>
-                <option value="en">English</option>
-                <option value="es">Español</option>
-            </select>
-        </div>
-
+        <!-- Devise -->
         <div class="navbar-currency">
             <form id="currency-form" method="post" action="{% url 'core:update_currency' %}">
                  {% csrf_token %}
                  <select name="currency" onchange="this.form.submit()" class="currency-select">
-                   <option value="XOF" {% if user_currency == 'XOF' %}selected{% endif %}>🇹🇬 (FCFA)</option>
-                   <option value="USD" {% if user_currency == 'USD' %}selected{% endif %}>🇺🇸 (USD $)</option>
-                   <option value="EUR" {% if user_currency == 'EUR' %}selected{% endif %}>🇪🇺 (EUR €)</option>
+                   <option value="XOF" {% if user_currency == 'XOF' %}selected{% endif %}>🇹🇬 FCFA</option>
+                   <option value="USD" {% if user_currency == 'USD' %}selected{% endif %}>🇺🇸 USD</option>
+                   <option value="EUR" {% if user_currency == 'EUR' %}selected{% endif %}>🇪🇺 EUR</option>
                 </select>
             </form>
         </div>
 
-
-        <!-- Menu utilisateur -->
+        <!-- Utilisateur -->
         <div class="navbar-user">
             {% if user.is_authenticated %}
-                <!-- Profil connecté -->
                 <a href="{% url 'core:account' %}" class="user-profile-link">
-                    <div class="user-avatar">
-                        <i class="fas fa-user-circle"></i>
-                    </div>
+                    <div class="user-avatar"><i class="fas fa-user-circle"></i></div>
                     <div class="user-profile-info">
                         <span class="user-greeting">Bonjour</span>
                         <span class="user-name">@{{ user.username }}</span>
                     </div>
                 </a>
-                
-                <!-- Menu dropdown caché -->
-                <div class="user-dropdown-menu">
-                    <a href="{% url 'core:account' %}" class="dropdown-item">
-                        <i class="fas fa-user"></i> Mon Profil
-                    </a>
-                    <a href="{% url 'core:account' %}" class="dropdown-item">
-                        <i class="fas fa-shopping-bag"></i> Mes Commandes
-                    </a>
-                    <a href="{% url 'core:account' %}" class="dropdown-item">
-                        <i class="fas fa-heart"></i> Favoris
-                    </a>
-                    <a href="{% url 'core:account' %}" class="dropdown-item">
-                        <i class="fas fa-cog"></i> Paramètres
-                    </a>
-                    <hr>
-                    <a href="{% url 'logout' %}" class="dropdown-item logout">
-                        <i class="fas fa-sign-out-alt"></i> Déconnexion
-                    </a>
-                </div>
             {% else %}
-                <!-- Bouton de connexion si non connecté -->
                 <a href="{% url 'core:login' %}" class="btn-login-navbar">
                     <i class="fas fa-sign-in-alt"></i>
                     <span class="login-text">Connexion</span>
@@ -121,47 +76,255 @@
     </div>
 </nav>
 
-<!-- MENU CATÉGORIES -->
+<!-- ================= MENU CATÉGORIES DYNAMIQUE ================= -->
 <div class="categories-menu">
     <div class="categories-container">
-        <!-- Catégorie Cafés avec dropdown -->
-        <div class="category-dropdown">
-            <a href="{% url 'core:product_type' 'cafe' %}" class="category-link active">
-                <i class="fas fa-coffee"></i>
-                <span>Cafés</span>
-            </a>
-        </div>
-
-        <!-- Catégorie Pains avec dropdown -->
-        <div class="category-dropdown">
-            <a href="{% url 'core:product_type' 'pain' %}" class="category-link">
-                <i class="fas fa-bread-slice"></i>
-                <span>Pains</span>
-            </a>
-        </div>
-
-        <!-- Catégorie Machines à café -->
-        <div class="category-dropdown">
-            <a href="{% url 'core:product_type' 'machine' %}" class="category-link">
-                <i class="fas fa-blender"></i>
-                <span>Machines à café</span>
-            </a>
-        </div>
-
-        <!-- Catégorie Accessoires -->
-        <div class="category-dropdown">
-            <a href="{% url 'core:product_type' 'accessoire' %}" class="category-link">
-                <i class="fas fa-utensils"></i>
-                <span>Accessoires</span>
-            </a>
-        </div>
-
-        <!-- Tous les produits -->
-        <a href="{% url 'core:products' %}" class="category-link">
-            <i class="fas fa-th"></i>
+        
+        <!-- Lien "Tous les produits" (Toujours affiché) -->
+        <a href="{% url 'core:products' %}" class="category-link {% if not request.GET.category and not request.GET.q %}active{% endif %}">
+            <i class="fas fa-th-large"></i>
             <span>Tous les produits</span>
         </a>
+
+        <!-- BOUCLE DYNAMIQUE SUR LES FILTRES PRINCIPAUX -->
+        {% for category in all_filters %}
+            
+            {% if forloop.counter <= 5 %}
+                <!-- Affichage direct pour les 5 premiers -->
+                <a href="{{ category.get_absolute_url }}" 
+                   class="category-link {% if request.GET.category == category.slug %}active{% endif %}">
+                    <i class="{{ category.icon_class }}"></i>
+                    <span>{{ category.name }}</span>
+                </a>
+            
+            {% elif forloop.counter == 6 %}
+                <!-- Début du bouton "Plus" à partir du 6ème élément -->
+                <div class="category-dropdown-wrapper">
+                    <button class="category-link dropdown-toggle" onclick="toggleCategoryDropdown(event)">
+                        <i class="fas fa-ellipsis-h"></i>
+                        <span>Plus</span>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </button>
+                    
+                    <!-- Conteneur des catégories cachées (s'affichera horizontalement) -->
+                    <div class="dropdown-content" id="extraCategoriesMenu">
+                        <!-- Le 6ème élément est inclus ici directement -->
+                        <a href="{{ category.get_absolute_url }}" 
+                           class="dropdown-item {% if request.GET.category == category.slug %}active{% endif %}">
+                            <i class="{{ category.icon_class }}"></i>
+                            <span>{{ category.name }}</span>
+                        </a>
+                    </div>
+                </div>
+            
+            {% else %}
+                <!-- Les éléments suivants (7, 8, etc.) sont cachés et déplacés par JS -->
+                <a href="{{ category.get_absolute_url }}" 
+                   class="dropdown-item hidden-cat {% if request.GET.category == category.slug %}active{% endif %}"
+                   data-name="{{ category.name }}"
+                   style="display:none;">
+                    <i class="{{ category.icon_class }}"></i>
+                    <span>{{ category.name }}</span>
+                </a>
+                
+                <!-- Script inline pour déplacer cet élément spécifique dans le menu -->
+                <script>
+                    (function() {
+                        var hiddenItem = document.querySelector('.hidden-cat[data-name="{{ category.name }}"]');
+                        var menu = document.getElementById('extraCategoriesMenu');
+                        if (hiddenItem && menu) {
+                            hiddenItem.style.display = 'flex';
+                            hiddenItem.classList.remove('hidden-cat');
+                            menu.appendChild(hiddenItem);
+                        }
+                    })();
+                </script>
+            {% endif %}
+            
+        {% empty %}
+            <span style="color: #999; font-size: 13px; padding: 10px;">Aucune catégorie.</span>
+        {% endfor %}
+
     </div>
 </div>
 
-<script src="{% static 'js/navbar.js' %}"></script>
+<!-- ================= CSS SPÉCIFIQUE POUR LE MENU DÉROULANT ================= -->
+<style>
+    /* Conteneur du bouton "Plus" */
+    .category-dropdown-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+
+    /* Le bouton "Plus" */
+    .dropdown-toggle {
+        background: rgba(212, 175, 55, 0.1);
+        border: 1px solid #D4AF37;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        color: #5D4037;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s;
+        text-decoration: none;
+        border-radius: 8px;
+        height: 100%;
+        min-height: 45px;
+    }
+
+    .dropdown-toggle:hover {
+        background: #D4AF37;
+        color: white;
+    }
+
+    /* Flèche qui tourne */
+    .toggle-icon {
+        font-size: 10px;
+        transition: transform 0.3s ease;
+    }
+    .dropdown-toggle.active .toggle-icon {
+        transform: rotate(180deg);
+    }
+
+    /* LE MENU DÉROULANT (Caché par défaut) */
+    .dropdown-content {
+        display: none; /* Caché initialement */
+        position: absolute;
+        top: 100%;
+        left: 1;
+        background-color: white;
+        min-width: max-content;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        border-radius: 8px;
+        z-index: 1000;
+        padding: 10px;
+        border: 1px solid #eee;
+        animation: slideDown 0.3s ease-out forwards;
+        
+        /* Disposition Horizontale */
+        flex-direction: row; 
+        gap: 10px;
+        flex-wrap: wrap;
+        width: max-content;
+        max-width: 600px; /* Limite largeur avant retour ligne */
+    }
+
+    /* Classe pour afficher le menu */
+    .dropdown-content.show {
+        display: flex;
+    }
+
+    /* Les liens dans le menu */
+    .dropdown-content .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 15px;
+        text-decoration: none;
+        color: #5D4037;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.2s;
+        border-radius: 6px;
+        white-space: nowrap;
+        background: #f9f9f9;
+    }
+
+    .dropdown-content .dropdown-item:hover {
+        background-color: #FFF8E1;
+        color: #D4AF37;
+        transform: translateY(-2px);
+    }
+
+    .dropdown-content .dropdown-item.active {
+        background-color: #D4AF37;
+        color: white;
+    }
+
+    .dropdown-content .dropdown-item i {
+        width: 18px;
+        text-align: center;
+        color: inherit;
+    }
+
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Responsive Mobile */
+    @media (max-width: 768px) {
+        .dropdown-content {
+            position: static;
+            box-shadow: none;
+            border: none;
+            padding-left: 20px;
+            background: transparent;
+            margin-top: 5px;
+            width: 100%;
+            max-width: 100%;
+            flex-direction: column;
+        }
+        
+        .category-dropdown-wrapper {
+            width: 100%;
+        }
+        
+        .dropdown-toggle {
+            width: 100%;
+            justify-content: flex-start;
+        }
+    }
+</style>
+
+<!-- ================= JAVASCRIPT ================= -->
+<script>
+    // Fonction pour ouvrir/fermer le menu
+    function toggleCategoryDropdown(event) {
+        event.stopPropagation(); // Empêche la propagation du clic
+        var menu = document.getElementById('extraCategoriesMenu');
+        var toggleBtn = event.currentTarget; // Le bouton cliqué
+        
+        if (menu) {
+            menu.classList.toggle('show');
+            toggleBtn.classList.toggle('active');
+        }
+    }
+
+    // Fermer le menu si on clique ailleurs sur la page
+    window.onclick = function(event) {
+        if (!event.target.matches('.dropdown-toggle') && !event.target.closest('.dropdown-toggle')) {
+            var dropdowns = document.getElementsByClassName("dropdown-content");
+            for (var i = 0; i < dropdowns.length; i++) {
+                var openDropdown = dropdowns[i];
+                if (openDropdown.classList.contains('show')) {
+                    openDropdown.classList.remove('show');
+                    // Remet la flèche à sa place
+                    var btn = openDropdown.previousElementSibling;
+                    if(btn && btn.classList.contains('dropdown-toggle')) {
+                        btn.classList.remove('active');
+                    }
+                }
+            }
+        }
+    }
+    
+    // Initialisation : S'assurer que les éléments cachés sont bien déplacés au chargement
+    document.addEventListener('DOMContentLoaded', function() {
+        // Le code inline dans la boucle Django s'en charge déjà, mais ceci est une sécurité
+        var hiddenItems = document.querySelectorAll('.hidden-cat');
+        var menu = document.getElementById('extraCategoriesMenu');
+        
+        hiddenItems.forEach(function(item) {
+            if(menu) {
+                item.style.display = 'flex';
+                item.classList.remove('hidden-cat');
+                menu.appendChild(item);
+            }
+        });
+    });
+</script>

@@ -6,7 +6,6 @@
 
 {% block extra_css %}
 <style>
-    /* ... (Garde tout ton CSS actuel, il est très bien) ... */
     .featured-product-image-container {
         position: relative; width: 100%; height: 200px; overflow: hidden;
         background-color: #F5F5F5; border-radius: 8px 8px 0 0;
@@ -30,7 +29,6 @@
         position: absolute; top: 8px; left: 8px; background: rgba(93, 64, 55, 0.9);
         color: white; padding: 4px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; z-index: 4;
     }
-    /* Ajout pour le compteur de produits */
     .product-count-badge {
         margin-top: 10px; font-size: 12px; color: #D4AF37; font-weight: 600;
         display: inline-block; background: rgba(212, 175, 55, 0.1);
@@ -42,110 +40,51 @@
 {% block content %}
 <div class="home-container">
 
-    <!-- ================= SECTION CAFÉS ================= -->
-    {% if cafe_categories %}
-    <h2 class="section-main-title">Nos catégories de cafés</h2>
-    
-    <section class="hero-grid-section">
-        {% for category in cafe_categories %}
-        <div class="hero-card">
-            <!-- Utilisation de get_absolute_url -->
-            <a href="{{ category.get_absolute_url }}" class="hero-card-link">
-                <div class="hero-card-image">
-                    {% if category.image %}
-                        <img src="{{ category.image.url }}" alt="{{ category.name }}">
-                    {% else %}
-                        <img src="{% static 'images/coffe_dosettes.jpeg' %}" alt="{{ category.name }}">
-                    {% endif %}
-                </div>
-                <div class="hero-card-content">
-                    <h3>{{ category.name }}</h3>
-                    <!-- Utilisation de short_description -->
-                    <p>{{ category.short_description }}</p>
-                    
-                    <!-- Nouveau : Affichage du nombre de produits -->
-                    {% if category.product_count > 0 %}
-                        <span class="product-count-badge">
-                            <i class="fas fa-box"></i> {{ category.product_count }} produits
-                        </span>
-                    {% endif %}
-                    
-                    <span class="btn-discover" style="margin-top: 15px;">Explorer</span>
-                </div>
-            </a>
-        </div>
-        {% endfor %}
+    <!-- ================= SECTIONS DYNAMIQUES PAR TYPE DE PRODUIT ================= -->
+    {% for type_slug, data in dynamic_sections.items %}
+        <h2 class="section-main-title">
+            {% if data.icon %}
+                <i class="fas {{ data.icon }}" style="color: #D4AF37; margin-right: 12px;"></i>
+            {% endif %}
+            {{ data.name }}
+        </h2>
         
-        <!-- Plus de remplissage artificiel : on affiche ce qu'on a, c'est plus honnête et responsive -->
-        {% if cafe_categories|length < 3 and cafe_categories|length > 0 %}
-            <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: #999; font-style: italic;">
-                D'autres arrivent bientôt...
+        <section class="hero-grid-section">
+            {% for category in data.categories %}
+            <div class="hero-card">
+                <a href="{{ category.get_absolute_url }}" class="hero-card-link">
+                    <div class="hero-card-image">
+                        {% if category.image %}
+                            <img src="{{ category.image.url }}" alt="{{ category.name }}">
+                        {% else %}
+                            <img src="{% static 'images/placeholder_category.jpg' %}" alt="{{ category.name }}" onerror="this.src='https://via.placeholder.com/400x300?text={{ category.name }}'">
+                        {% endif %}
+                    </div>
+                    <div class="hero-card-content">
+                        <h3>{{ category.name }}</h3>
+                        <p>{{ category.short_description }}</p>
+                        {% if category.product_count > 0 %}
+                            <span class="product-count-badge">
+                                <i class="fas fa-box"></i> {{ category.product_count }} produits
+                            </span>
+                        {% endif %}
+                        <span class="btn-discover" style="margin-top: 15px;">Explorer</span>
+                    </div>
+                </a>
             </div>
-        {% endif %}
-    </section>
-    {% endif %}
-
-    <!-- ================= SECTION PAINS ================= -->
-    {% if pain_categories %}
-    <h2 class="section-main-title">Nos catégories de Pains</h2>
-    
-    <section class="hero-grid-section">
-        {% for category in pain_categories %}
-        <div class="hero-card">
-            <a href="{{ category.get_absolute_url }}" class="hero-card-link">
-                <div class="hero-card-image">
-                    {% if category.image %}
-                        <img src="{{ category.image.url }}" alt="{{ category.name }}">
-                    {% else %}
-                        <img src="{% static 'images/pain_baguette.jpeg' %}" alt="{{ category.name }}">
-                    {% endif %}
-                </div>
-                <div class="hero-card-content">
-                    <h3>{{ category.name }}</h3>
-                    <p>{{ category.short_description }}</p>
-                    {% if category.product_count > 0 %}
-                        <span class="product-count-badge">
-                            <i class="fas fa-bread-slice"></i> {{ category.product_count }} produits
-                        </span>
-                    {% endif %}
-                    <span class="btn-discover" style="margin-top: 15px;">Explorer</span>
-                </div>
-            </a>
+            {% empty %}
+            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #999;">
+                Aucune catégorie disponible pour le moment.
+            </div>
+            {% endfor %}
+        </section>
+    {% empty %}
+        <div style="text-align: center; padding: 60px 20px; color: #777;">
+            <i class="fas fa-store-slash" style="font-size: 48px; margin-bottom: 20px; color: #ddd;"></i>
+            <h3>Bienvenue chez Obidon</h3>
+            <p>Nos collections arrivent bientôt.</p>
         </div>
-        {% endfor %}
-    </section>
-    {% endif %}
-
-    <!-- ================= SECTION MACHINES ================= -->
-    {% if machine_categories %}
-    <h2 class="section-main-title">Nos Machines à café</h2>
-    
-    <section class="hero-grid-section">
-        {% for category in machine_categories %}
-        <div class="hero-card">
-            <a href="{{ category.get_absolute_url }}" class="hero-card-link">
-                <div class="hero-card-image">
-                    {% if category.image %}
-                        <img src="{{ category.image.url }}" alt="{{ category.name }}">
-                    {% else %}
-                        <img src="{% static 'images/machine_capsule.jpg' %}" alt="{{ category.name }}">
-                    {% endif %}
-                </div>
-                <div class="hero-card-content">
-                    <h3>{{ category.name }}</h3>
-                    <p>{{ category.short_description }}</p>
-                    {% if category.product_count > 0 %}
-                        <span class="product-count-badge">
-                            <i class="fas fa-coffee"></i> {{ category.product_count }} produits
-                        </span>
-                    {% endif %}
-                    <span class="btn-discover" style="margin-top: 15px;">Explorer</span>
-                </div>
-            </a>
-        </div>
-        {% endfor %}
-    </section>
-    {% endif %}
+    {% endfor %}
 
     <!-- ================= PRODUITS EN VEDETTE ================= -->
     {% if featured_products %}
@@ -155,17 +94,22 @@
             {% for product in featured_products %}
                 <div class="featured-card">
                     <div class="featured-product-image-container">
-                        <div class="featured-product-image-hover {% if product.get_back_image_url and product.get_back_image_url != product.get_image_url %}has-back-image{% endif %}">
-                            <img src="{{ product.get_image_url }}" alt="{{ product.name }}" class="front-image">
-                            {% if product.get_back_image_url and product.get_back_image_url != product.get_image_url %}
-                                <img src="{{ product.get_back_image_url }}" alt="{{ product.name }} - verso" class="back-image">
-                                <div class="featured-back-image-badge"><i class="fas fa-sync-alt"></i> Recto/verso</div>
-                                <div class="featured-hover-indicator"><i class="fas fa-hand-pointer"></i> Survolez</div>
-                            {% endif %}
-                            {% if product.discount_price_fcfa %}
-                                <span class="discount-badge">-{{ product.discount_percentage }}%</span>
-                            {% endif %}
-                        </div>
+                        <!-- LIEN AJOUTÉ ICI POUR RENDRE L'IMAGE CLIQUABLE -->
+                        <a href="{% url 'core:product_detail' product.id %}" style="display: block; width: 100%; height: 100%; position: relative; z-index: 10;">
+                            <div class="featured-product-image-hover {% if product.get_back_image_url and product.get_back_image_url != product.get_image_url %}has-back-image{% endif %}">
+                                <img src="{{ product.get_image_url }}" alt="{{ product.name }}" class="front-image">
+                                
+                                {% if product.get_back_image_url and product.get_back_image_url != product.get_image_url %}
+                                    <img src="{{ product.get_back_image_url }}" alt="{{ product.name }} - verso" class="back-image">
+                                    <div class="featured-back-image-badge"><i class="fas fa-sync-alt"></i> Recto/verso</div>
+                                    <div class="featured-hover-indicator"><i class="fas fa-hand-pointer"></i> Voir détail</div>
+                                {% endif %}
+                                
+                                {% if product.discount_price_fcfa %}
+                                    <span class="discount-badge">-{{ product.discount_percentage }}%</span>
+                                {% endif %}
+                            </div>
+                        </a>
                     </div>
                     <div class="product-info">
                         <h3>{{ product.name }}</h3>
@@ -217,38 +161,37 @@
     </section>
 </div>
 
-<!-- ... (Ton CSS Responsive et JS restent identiques) ... -->
 <style>
     .home-container { max-width: 1400px; margin: 0 auto; padding: 0 20px; }
-    .section-main-title { font-size: 32px; font-weight: 700; color: #5D4037; text-align: center; margin: 40px 0 20px 0; }
-    .hero-grid-section { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; padding: 20px 0 60px 0; margin-bottom: 40px; }
-    .hero-card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.1); transition: all 0.3s ease; }
-    .hero-card:hover { transform: translateY(-10px); box-shadow: 0 15px 40px rgba(0,0,0,0.2); }
-    .hero-card-link { text-decoration: none; color: inherit; display: block; }
-    .hero-card-image { width: 100%; height: 280px; overflow: hidden; position: relative; }
-    .hero-card-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
-    .hero-card:hover .hero-card-image img { transform: scale(1.1); }
+    .section-main-title { font-size: 32px; font-weight: 700; color: #5D4037; text-align: center; margin: 50px 0 30px 0; display: flex; align-items: center; justify-content: center;}
+    .hero-grid-section { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; padding: 20px 0 60px 0; }
+    .hero-card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.08); transition: all 0.3s ease; }
+    .hero-card:hover { transform: translateY(-8px); box-shadow: 0 15px 35px rgba(0,0,0,0.15); }
+    .hero-card-link { text-decoration: none; color: inherit; display: block; height: 100%; }
+    .hero-card-image { width: 100%; height: 250px; overflow: hidden; background: #f5f5f5; }
+    .hero-card-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
+    .hero-card:hover .hero-card-image img { transform: scale(1.08); }
     .hero-card-content { padding: 25px; text-align: center; }
-    .hero-card-content h3 { font-size: 22px; font-weight: 700; color: #5D4037; margin-bottom: 12px; min-height: 56px; }
-    .hero-card-content p { font-size: 14px; color: #666; line-height: 1.6; margin-bottom: 10px; min-height: 44px; }
-    .hero-card .btn-discover { display: inline-block; background: linear-gradient(135deg, #5D4037 0%, #4E342E 100%); color: white; padding: 12px 30px; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 13px; transition: all 0.3s; }
-    .hero-card:hover .btn-discover { box-shadow: 0 5px 15px rgba(0,0,0,0.2); transform: translateY(-2px); }
+    .hero-card-content h3 { font-size: 20px; font-weight: 700; color: #5D4037; margin-bottom: 10px; min-height: 50px; }
+    .hero-card-content p { font-size: 14px; color: #777; line-height: 1.5; margin-bottom: 15px; min-height: 40px; }
+    .btn-discover { display: inline-block; background: #5D4037; color: white; padding: 10px 25px; border-radius: 50px; font-size: 13px; font-weight: 600; transition: 0.3s; }
+    .hero-card:hover .btn-discover { background: #D4AF37; transform: translateY(-2px); }
+    
     .featured-section { padding: 60px 0; }
-    .featured-section h2 { font-size: 32px; color: #5D4037; margin-bottom: 40px; text-align: center; }
-    .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
-    .featured-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.08); transition: all 0.3s; }
-    .featured-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
-    .discount-badge { position: absolute; top: 10px; right: 10px; background-color: #D32F2F; color: white; padding: 5px 10px; border-radius: 4px; font-weight: 600; font-size: 11px; z-index: 5; }
-    .product-info { padding: 15px; }
-    .product-info h3 { color: #5D4037; margin: 0 0 5px 0; font-size: 14px; height: 34px; overflow: hidden; }
+    .featured-section h2 { font-size: 32px; color: #5D4037; text-align: center; margin-bottom: 40px; }
+    .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 25px; }
+    .featured-card { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.3s; }
+    .featured-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    .product-info { padding: 15px; text-align: center; }
+    .product-info h3 { font-size: 15px; color: #333; margin: 10px 0; height: 40px; overflow: hidden; }
     .category { color: #999; font-size: 11px; margin: 0 0 10px 0; }
-    .rating { display: flex; align-items: center; gap: 5px; margin-bottom: 10px; font-size: 11px; }
+    .rating { display: flex; align-items: center; justify-content: center; gap: 5px; margin-bottom: 10px; font-size: 11px; }
     .stars { color: #D4AF37; font-size: 12px; }
-    .price { display: flex; gap: 10px; margin-bottom: 12px; font-size: 13px; }
+    .price { display: flex; justify-content: center; gap: 10px; margin-bottom: 12px; font-size: 13px; }
     .price .original { text-decoration: line-through; color: #999; }
     .price .sale { font-weight: 700; color: #D32F2F; }
-    .btn-view { display: block; background: linear-gradient(135deg, #5D4037 0%, #4E342E 100%); color: white; padding: 10px; text-align: center; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: 600; transition: all 0.3s; }
-    .btn-view:hover { box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    .btn-view { display: block; background: #5D4037; color: white; padding: 8px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600; }
+    
     .why-choose-us { padding: 60px 0; }
     .why-choose-us h2 { font-size: 32px; color: #5D4037; margin-bottom: 40px; text-align: center; }
     .benefits-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; }
@@ -257,6 +200,7 @@
     .benefit-icon { font-size: 48px; color: #D4AF37; margin-bottom: 20px; }
     .benefit-card h3 { color: #5D4037; margin: 0 0 10px 0; font-size: 18px; }
     .benefit-card p { color: #666; font-size: 14px; margin: 0; line-height: 1.6; }
+    
     .newsletter-section { background: linear-gradient(135deg, #5D4037 0%, #4E342E 100%); color: white; padding: 60px 30px; border-radius: 8px; text-align: center; margin: 60px 0; }
     .newsletter-section h2 { color: white; margin-bottom: 10px; font-size: 28px; }
     .newsletter-section p { color: rgba(255,255,255,0.8); margin-bottom: 20px; }
@@ -264,6 +208,7 @@
     .newsletter-form input { flex: 1; padding: 12px 15px; border: none; border-radius: 4px; font-size: 14px; }
     .newsletter-form button { background-color: #D4AF37; color: #5D4037; border: none; padding: 12px 25px; border-radius: 4px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
     .newsletter-form button:hover { background-color: #C4A027; }
+
     @media (max-width: 992px) { .hero-grid-section { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 768px) { 
         .hero-grid-section { grid-template-columns: 1fr; gap: 20px; } 
@@ -272,7 +217,7 @@
         .newsletter-form { flex-direction: column; } 
         .featured-product-image-container { height: 150px; } 
     }
-    @media (max-width: 480px) { .section-main-title { font-size: 24px; } .hero-card-image { height: 200px; } }
+    @media (max-width: 480px) { .section-main-title { font-size: 26px; } .hero-card-image { height: 200px; } }
 </style>
 
 <script>

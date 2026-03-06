@@ -1,26 +1,55 @@
 from django.contrib import admin
 from .models import (
-    Category, Currency, ExchangeRate, Product, ProductImage, 
+    ProductType, Category, Currency, ExchangeRate, Product, ProductImage, 
     Order, OrderItem, Review, UserCurrencyPreference
 )
+
+# ==============================================================================
+# NOUVEAU : ADMIN POUR LES TYPES DE PRODUITS DYNAMIQUES
+# ==============================================================================
+
+@admin.register(ProductType)
+class ProductTypeAdmin(admin.ModelAdmin):
+    list_display = ['name', 'slug', 'icon', 'is_active', 'created_at']
+    list_filter = ['is_active']
+    search_fields = ['name', 'description']
+    prepopulated_fields = {'slug': ('name',)}
+    
+    fieldsets = (
+        ('Informations', {
+            'fields': ('name', 'slug', 'description'),
+            'description': "Définissez le nom du type de produit (ex: Cafés, Thés, Chocolats)."
+        }),
+        ('Apparence & Filtres', {
+            'fields': ('icon', 'is_active'),
+            'description': "Choisissez l'icône FontAwesome (ex: fa-coffee, fa-leaf) sans le préfixe 'fas'."
+        }),
+    )
+
+
+# ==============================================================================
+# CATÉGORIES
+# ==============================================================================
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     list_display = [
         'name', 
         'parent', 
-        'slug', 
+        'icon',              # Nouveau champ affiché
         'display_on_home', 
+        'is_filter_main',    # Nouveau champ affiché
         'home_position', 
         'is_active', 
         'created_at'
     ]
     
-    # CORRECTION ICI : J'ai supprimé 'is_featured' qui n'existe pas dans le modèle Category
     list_filter = [
         'is_active', 
         'display_on_home', 
-        'parent'
+        'is_filter_main',    # Filtre ajouté
+        'parent',
+        'icon'
     ]
     
     search_fields = ['name', 'description', 'parent__name']
@@ -34,9 +63,9 @@ class CategoryAdmin(admin.ModelAdmin):
         ('Contenu', {
             'fields': ('description', 'image')
         }),
-        ('Affichage Page d\'Accueil', {
-            'fields': ('display_on_home', 'home_position'),
-            'description': "Cochez 'Afficher sur la page d'accueil' et définissez l'ordre (0 = premier)."
+        ('Configuration des Filtres & Accueil', {
+            'fields': ('icon', 'is_filter_main', 'display_on_home', 'home_position'),
+            'description': "Cochez 'Afficher dans les filtres' pour la barre du haut. Choisissez une icône."
         }),
         ('Statut', {
             'fields': ('is_active',)
@@ -49,6 +78,10 @@ class CategoryAdmin(admin.ModelAdmin):
     
     readonly_fields = ['created_at', 'updated_at']
 
+
+# ==============================================================================
+# DEVISES & TAUX
+# ==============================================================================
 
 @admin.register(Currency)
 class CurrencyAdmin(admin.ModelAdmin):
@@ -84,12 +117,16 @@ class ExchangeRateAdmin(admin.ModelAdmin):
     )
 
 
+# ==============================================================================
+# PRODUITS
+# ==============================================================================
+
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = [
         'name', 
+        'product_type',      # Affiche maintenant le type dynamique
         'category', 
-        'product_type', 
         'price_fcfa_display', 
         'discount_price_fcfa_display', 
         'stock', 
@@ -98,13 +135,15 @@ class ProductAdmin(admin.ModelAdmin):
         'created_at'
     ]
     
-    list_filter = ['category', 'is_featured', 'is_active', 'product_type']
+    # Le filtre product_type fonctionne maintenant avec le nouveau modèle
+    list_filter = ['product_type', 'category', 'is_featured', 'is_active']
     search_fields = ['name', 'description']
     readonly_fields = ['rating', 'reviews_count', 'created_at', 'updated_at']
     
     fieldsets = (
         ('Informations de base', {
-            'fields': ('name', 'slug', 'category', 'product_type', 'description', 'detailed_description')
+            'fields': ('name', 'slug', 'product_type', 'category', 'description', 'detailed_description'),
+            'description': "Sélectionnez un Type de produit (créé dans l'onglet Types de produits) et une Catégorie."
         }),
         ('Prix (en FCFA)', {
             'fields': ('price_fcfa', 'discount_price_fcfa'),
@@ -149,6 +188,10 @@ class ProductImageAdmin(admin.ModelAdmin):
         return "Aucune image"
     image_preview.short_description = "Aperçu"
 
+
+# ==============================================================================
+# COMMANDES
+# ==============================================================================
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
@@ -249,6 +292,10 @@ class OrderItemAdmin(admin.ModelAdmin):
         return f"{obj.total_fcfa:,.0f} FCFA".replace(',', ' ')
     total_fcfa_display.short_description = 'Total FCFA'
 
+
+# ==============================================================================
+# AVIS & PRÉFÉRENCES
+# ==============================================================================
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):

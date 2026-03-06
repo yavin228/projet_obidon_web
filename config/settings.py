@@ -52,6 +52,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'core.views.currency_context',  # CORRIGÉ: pointe vers la fonction dans views.py
+                'core.context_processors.global_filters'
             ],
             'builtins': [  # AJOUTÉ pour charger automatiquement les tags de template
                 'core.templatetags.currency_tags',  # Charge automatiquement tes tags de devise

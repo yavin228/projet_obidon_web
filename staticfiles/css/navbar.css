@@ -697,3 +697,141 @@ body {
     border-color: #D4AF37;
     box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
 }
+
+/* --- Styles pour le Menu Déroulant Catégories --- */
+
+/* --- Styles pour le Menu Déroulant Horizontal --- */
+
+/* Conteneur du bouton "Plus" */
+.category-dropdown-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+/* Le bouton "Plus" */
+.dropdown-toggle {
+    background: rgba(212, 175, 55, 0.1); /* Fond léger doré */
+    border: 1px solid #D4AF37;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: #5D4037;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s;
+    text-decoration: none;
+    border-radius: 8px;
+    height: 100%; /* Pour s'aligner avec les autres liens */
+    min-height: 45px;
+}
+
+.dropdown-toggle:hover {
+    background: #D4AF37;
+    color: white;
+}
+
+/* Petite flèche qui tourne */
+.toggle-icon {
+    font-size: 10px;
+    transition: transform 0.3s ease;
+}
+.dropdown-toggle.active .toggle-icon {
+    transform: rotate(180deg);
+}
+
+/* LE MENU DÉROULANT (Caché par défaut) */
+.dropdown-content {
+    display: none; /* Caché initialement */
+    position: absolute;
+    top: 100%; /* Juste en dessous du bouton */
+    left: 0;
+    background-color: white;
+    min-width: max-content; /* S'adapte au contenu */
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    border-radius: 8px;
+    z-index: 1000;
+    padding: 10px;
+    border: 1px solid #eee;
+    
+    /* Animation d'apparition */
+    animation: slideDown 0.3s ease-out forwards;
+    
+    /*Disposition Horizontale*/
+    display: none; /* Sera toggled par JS */
+    flex-direction: row; 
+    gap: 10px;
+    flex-wrap: wrap; /* Passe à la ligne si trop d'éléments */
+    width: max-content;
+    max-width: 600px; /* Limite la largeur avant de passer à la ligne */
+}
+
+/* Classe pour afficher le menu (ajoutée par JS) */
+.dropdown-content.show {
+    display: flex; /* Affiche en flex horizontal */
+}
+
+/* Les liens dans le menu déroulant */
+.dropdown-content .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 15px;
+    text-decoration: none;
+    color: #5D4037;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+    border-radius: 6px;
+    white-space: nowrap; /* Empêche le texte de se couper */
+    background: #f9f9f9;
+}
+
+.dropdown-content .dropdown-item:hover {
+    background-color: #FFF8E1;
+    color: #D4AF37;
+    transform: translateY(-2px);
+}
+
+.dropdown-content .dropdown-item.active {
+    background-color: #D4AF37;
+    color: white;
+}
+
+.dropdown-content .dropdown-item i {
+    width: 18px;
+    text-align: center;
+    color: inherit;
+}
+
+/* Animation */
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive Mobile : Sur mobile, on affiche en colonne ou on adapte */
+@media (max-width: 768px) {
+    .dropdown-content {
+        position: static; /* Plus de position absolue sur mobile */
+        box-shadow: none;
+        border: none;
+        padding-left: 20px;
+        background: transparent;
+        margin-top: 5px;
+        width: 100%;
+        max-width: 100%;
+        flex-direction: column; /* Colonne sur mobile */
+    }
+    
+    .category-dropdown-wrapper {
+        width: 100%;
+    }
+    
+    .dropdown-toggle {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
