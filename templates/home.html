@@ -13,12 +13,16 @@
     .featured-product-image-hover { position: relative; width: 100%; height: 100%; }
     .featured-product-image-hover img {
         position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-        object-fit: cover; transition: opacity 0.4s ease, transform 0.6s ease;
+        /* CORRECTION EDGE : Ajout des prefixes */
+        -o-object-fit: cover;
+        object-fit: cover;
+        transition: opacity 0.4s ease, transform 0.6s ease;
+        -ms-transition: opacity 0.4s ease, -ms-transform 0.6s ease;
     }
-    .featured-product-image-hover .front-image { opacity: 1; transform: translateY(0); z-index: 2; }
-    .featured-product-image-hover .back-image { opacity: 0; transform: translateY(15px); z-index: 1; }
-    .featured-product-image-hover.has-back-image:hover .front-image { opacity: 0; transform: translateY(-15px); }
-    .featured-product-image-hover.has-back-image:hover .back-image { opacity: 1; transform: translateY(0); }
+    .featured-product-image-hover .front-image { opacity: 1; transform: translateY(0); z-index: 2; -ms-transform: translateY(0); }
+    .featured-product-image-hover .back-image { opacity: 0; transform: translateY(15px); z-index: 1; -ms-transform: translateY(15px); }
+    .featured-product-image-hover.has-back-image:hover .front-image { opacity: 0; transform: translateY(-15px); -ms-transform: translateY(-15px); }
+    .featured-product-image-hover.has-back-image:hover .back-image { opacity: 1; transform: translateY(0); -ms-transform: translateY(0); }
     .featured-hover-indicator {
         position: absolute; bottom: 8px; right: 8px; background: rgba(212, 175, 55, 0.95);
         color: white; padding: 4px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;
@@ -164,24 +168,71 @@
 <style>
     .home-container { max-width: 1400px; margin: 0 auto; padding: 0 20px; }
     .section-main-title { font-size: 32px; font-weight: 700; color: #5D4037; text-align: center; margin: 50px 0 30px 0; display: flex; align-items: center; justify-content: center;}
-    .hero-grid-section { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; padding: 20px 0 60px 0; }
-    .hero-card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.08); transition: all 0.3s ease; }
-    .hero-card:hover { transform: translateY(-8px); box-shadow: 0 15px 35px rgba(0,0,0,0.15); }
+    
+    /* CORRECTION EDGE : Grid avec fallback margin au lieu de gap */
+    .hero-grid-section { 
+        display: grid; 
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+        /* gap: 30px; */ /* Edge ancien ne supporte pas toujours gap */
+        padding: 20px 0 60px 0; 
+    }
+    
+    .hero-card { 
+        background: white; border-radius: 15px; overflow: hidden; 
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08); transition: all 0.3s ease; 
+        /* Fallback pour gap avec margin */
+        margin-bottom: 30px;
+        -ms-transition: all 0.3s ease;
+    }
+    
+    .hero-card:hover { 
+        transform: translateY(-8px); 
+        box-shadow: 0 15px 35px rgba(0,0,0,0.15); 
+        -ms-transform: translateY(-8px);
+    }
+    
     .hero-card-link { text-decoration: none; color: inherit; display: block; height: 100%; }
     .hero-card-image { width: 100%; height: 250px; overflow: hidden; background: #f5f5f5; }
-    .hero-card-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
-    .hero-card:hover .hero-card-image img { transform: scale(1.08); }
+    .hero-card-image img { 
+        width: 100%; height: 100%; 
+        -o-object-fit: cover;
+        object-fit: cover; 
+        transition: transform 0.5s ease;
+        -ms-transition: -ms-transform 0.5s ease;
+    }
+    .hero-card:hover .hero-card-image img { 
+        transform: scale(1.08); 
+        -ms-transform: scale(1.08);
+    }
+    
     .hero-card-content { padding: 25px; text-align: center; }
     .hero-card-content h3 { font-size: 20px; font-weight: 700; color: #5D4037; margin-bottom: 10px; min-height: 50px; }
     .hero-card-content p { font-size: 14px; color: #777; line-height: 1.5; margin-bottom: 15px; min-height: 40px; }
     .btn-discover { display: inline-block; background: #5D4037; color: white; padding: 10px 25px; border-radius: 50px; font-size: 13px; font-weight: 600; transition: 0.3s; }
-    .hero-card:hover .btn-discover { background: #D4AF37; transform: translateY(-2px); }
+    .hero-card:hover .btn-discover { background: #D4AF37; transform: translateY(-2px); -ms-transform: translateY(-2px); }
     
     .featured-section { padding: 60px 0; }
     .featured-section h2 { font-size: 32px; color: #5D4037; text-align: center; margin-bottom: 40px; }
-    .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 25px; }
-    .featured-card { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.3s; }
-    .featured-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    
+    /* CORRECTION EDGE pour products-grid */
+    .products-grid { 
+        display: grid; 
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); 
+        /* gap: 25px; */
+    }
+    
+    .featured-card { 
+        background: white; border-radius: 10px; overflow: hidden; 
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.3s;
+        margin-bottom: 25px; /* Fallback pour gap */
+        -ms-transition: 0.3s;
+    }
+    .featured-card:hover { 
+        transform: translateY(-5px); 
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        -ms-transform: translateY(-5px);
+    }
+    
     .product-info { padding: 15px; text-align: center; }
     .product-info h3 { font-size: 15px; color: #333; margin: 10px 0; height: 40px; overflow: hidden; }
     .category { color: #999; font-size: 11px; margin: 0 0 10px 0; }
@@ -194,9 +245,27 @@
     
     .why-choose-us { padding: 60px 0; }
     .why-choose-us h2 { font-size: 32px; color: #5D4037; margin-bottom: 40px; text-align: center; }
-    .benefits-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; }
-    .benefit-card { text-align: center; padding: 30px; background: white; border-radius: 8px; box-shadow: 0 2px 15px rgba(0,0,0,0.08); transition: all 0.3s; }
-    .benefit-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
+    
+    /* CORRECTION EDGE pour benefits-grid */
+    .benefits-grid { 
+        display: grid; 
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+        /* gap: 30px; */
+    }
+    
+    .benefit-card { 
+        text-align: center; padding: 30px; background: white; 
+        border-radius: 8px; box-shadow: 0 2px 15px rgba(0,0,0,0.08); 
+        transition: all 0.3s;
+        margin-bottom: 30px; /* Fallback pour gap */
+        -ms-transition: all 0.3s;
+    }
+    .benefit-card:hover { 
+        transform: translateY(-5px); 
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        -ms-transform: translateY(-5px);
+    }
+    
     .benefit-icon { font-size: 48px; color: #D4AF37; margin-bottom: 20px; }
     .benefit-card h3 { color: #5D4037; margin: 0 0 10px 0; font-size: 18px; }
     .benefit-card p { color: #666; font-size: 14px; margin: 0; line-height: 1.6; }
@@ -209,15 +278,53 @@
     .newsletter-form button { background-color: #D4AF37; color: #5D4037; border: none; padding: 12px 25px; border-radius: 4px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
     .newsletter-form button:hover { background-color: #C4A027; }
 
-    @media (max-width: 992px) { .hero-grid-section { grid-template-columns: repeat(2, 1fr); } }
+    /* Media queries avec corrections Edge */
+    @media (max-width: 992px) { 
+        .hero-grid-section { grid-template-columns: repeat(2, 1fr); } 
+        .hero-card { margin-bottom: 30px; }
+    }
+    
     @media (max-width: 768px) { 
-        .hero-grid-section { grid-template-columns: 1fr; gap: 20px; } 
+        .hero-grid-section { grid-template-columns: 1fr; } 
+        .hero-card { margin-bottom: 20px; }
         .hero-card-content h3 { font-size: 20px; } 
-        .products-grid, .benefits-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); } 
+        .products-grid, .benefits-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+        .featured-card, .benefit-card { margin-bottom: 20px; }
         .newsletter-form { flex-direction: column; } 
         .featured-product-image-container { height: 150px; } 
     }
-    @media (max-width: 480px) { .section-main-title { font-size: 26px; } .hero-card-image { height: 200px; } }
+    
+    @media (max-width: 480px) { 
+        .section-main-title { font-size: 26px; } 
+        .hero-card-image { height: 200px; } 
+    }
+    
+    /* FALLBACK FLEXBOX POUR EDGE TRÈS ANCIEN */
+    @supports not (display: grid) {
+        .hero-grid-section,
+        .products-grid,
+        .benefits-grid {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -15px;
+        }
+        .hero-card,
+        .featured-card,
+        .benefit-card {
+            flex: 0 0 calc(33.333% - 30px);
+            margin: 0 15px 30px;
+        }
+        @media (max-width: 992px) {
+            .hero-card, .featured-card, .benefit-card {
+                flex: 0 0 calc(50% - 30px);
+            }
+        }
+        @media (max-width: 768px) {
+            .hero-card, .featured-card, .benefit-card {
+                flex: 0 0 100%;
+            }
+        }
+    }
 </style>
 
 <script>
@@ -249,5 +356,15 @@
             });
         });
     });
+</script>
+<script>
+    // Détection Edge pour correctifs spécifiques
+    if (navigator.userAgent.indexOf('Edge') > -1 || navigator.userAgent.indexOf('Edg') > -1) {
+        // Forcer le reflow pour corriger object-fit sur Edge
+        document.querySelectorAll('.hero-card-image img, .featured-product-image-hover img').forEach(img => {
+            img.style.objectFit = 'cover';
+            img.offsetHeight; // Force reflow
+        });
+    }
 </script>
 {% endblock %}

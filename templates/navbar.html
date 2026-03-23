@@ -80,7 +80,7 @@
 <div class="categories-menu">
     <div class="categories-container">
         
-        <!-- Lien "Tous les produits" (Toujours affiché) -->
+        <!-- Lien "Tous les produits" -->
         <a href="{% url 'core:products' %}" class="category-link {% if not request.GET.category and not request.GET.q %}active{% endif %}">
             <i class="fas fa-th-large"></i>
             <span>Tous les produits</span>
@@ -89,15 +89,15 @@
         <!-- BOUCLE DYNAMIQUE SUR LES FILTRES PRINCIPAUX -->
         {% for category in all_filters %}
             
-            {% if forloop.counter <= 5 %}
-                <!-- Affichage direct pour les 5 premiers -->
+            {% if forloop.counter <= 4 %}
+                <!-- Affichage direct pour les 4 premiers -->
                 <a href="{{ category.get_absolute_url }}" 
                    class="category-link {% if request.GET.category == category.slug %}active{% endif %}">
                     <i class="{{ category.icon_class }}"></i>
                     <span>{{ category.name }}</span>
                 </a>
             
-            {% elif forloop.counter == 6 %}
+            {% elif forloop.counter == 5 %}
                 <!-- Début du bouton "Plus" à partir du 6ème élément -->
                 <div class="category-dropdown-wrapper">
                     <button class="category-link dropdown-toggle" onclick="toggleCategoryDropdown(event)">
@@ -106,7 +106,7 @@
                         <i class="fas fa-chevron-down toggle-icon"></i>
                     </button>
                     
-                    <!-- Conteneur des catégories cachées (s'affichera horizontalement) -->
+                    <!-- Conteneur des catégories cachées -->
                     <div class="dropdown-content" id="extraCategoriesMenu">
                         <!-- Le 6ème élément est inclus ici directement -->
                         <a href="{{ category.get_absolute_url }}" 
@@ -118,7 +118,7 @@
                 </div>
             
             {% else %}
-                <!-- Les éléments suivants (7, 8, etc.) sont cachés et déplacés par JS -->
+                <!-- Les éléments suivants sont cachés et déplacés par JS -->
                 <a href="{{ category.get_absolute_url }}" 
                    class="dropdown-item hidden-cat {% if request.GET.category == category.slug %}active{% endif %}"
                    data-name="{{ category.name }}"
@@ -127,7 +127,7 @@
                     <span>{{ category.name }}</span>
                 </a>
                 
-                <!-- Script inline pour déplacer cet élément spécifique dans le menu -->
+                <!-- Script inline pour déplacer cet élément dans le menu -->
                 <script>
                     (function() {
                         var hiddenItem = document.querySelector('.hidden-cat[data-name="{{ category.name }}"]');
@@ -192,47 +192,57 @@
 
     /* LE MENU DÉROULANT (Caché par défaut) */
     .dropdown-content {
-        display: none; /* Caché initialement */
-        position: absolute;
-        top: 100%;
-        left: 1;
-        background-color: white;
-        min-width: max-content;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        border-radius: 8px;
-        z-index: 1000;
-        padding: 10px;
-        border: 1px solid #eee;
-        animation: slideDown 0.3s ease-out forwards;
-        
-        /* Disposition Horizontale */
-        flex-direction: row; 
-        gap: 10px;
-        flex-wrap: wrap;
-        width: max-content;
-        max-width: 600px; /* Limite largeur avant retour ligne */
-    }
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: white;
+    min-width: 400px; /* Plus large pour 2-3 colonnes */
+    max-width: 600px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    border-radius: 8px;
+    z-index: 1000;
+    padding: 15px;
+    border: 1px solid #eee;
+    animation: slideDown 0.3s ease-out forwards;
+    
+    /* Grille pour affichage organisé */
+    display: none;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); /* Grille responsive */
+    gap: 8px;
+}
 
-    /* Classe pour afficher le menu */
-    .dropdown-content.show {
-        display: flex;
-    }
+.dropdown-content.show {
+    display: grid; /* Affiche en grille */
+}
 
-    /* Les liens dans le menu */
+/* Les liens dans le menu */
+.dropdown-content .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px;
+    text-decoration: none;
+    color: #5D4037;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+    border-radius: 6px;
+    white-space: nowrap;
+    background: #f9f9f9;
+    
+    /* CORRECTION ICI : Force le retour à la ligne propre */
+    flex: 0 0 calc(33.333% - 10px); /* 3 colonnes avec espacement */
+    max-width: calc(33.333% - 10px);
+}
+
+/* Pour mobile : 2 colonnes */
+@media (max-width: 768px) {
     .dropdown-content .dropdown-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 15px;
-        text-decoration: none;
-        color: #5D4037;
-        font-size: 13px;
-        font-weight: 500;
-        transition: all 0.2s;
-        border-radius: 6px;
-        white-space: nowrap;
-        background: #f9f9f9;
+        flex: 0 0 calc(50% - 10px); /* 2 colonnes */
+        max-width: calc(50% - 10px);
     }
+}
 
     .dropdown-content .dropdown-item:hover {
         background-color: #FFF8E1;
@@ -315,7 +325,6 @@
     
     // Initialisation : S'assurer que les éléments cachés sont bien déplacés au chargement
     document.addEventListener('DOMContentLoaded', function() {
-        // Le code inline dans la boucle Django s'en charge déjà, mais ceci est une sécurité
         var hiddenItems = document.querySelectorAll('.hidden-cat');
         var menu = document.getElementById('extraCategoriesMenu');
         
